@@ -24,6 +24,10 @@ public struct APAuthenticator: AsyncRequestAuthenticator {
   
   public let signatureRegExp = try! Regex(#"keyId=\"(.+)\",\s?headers=\"(.+)\",\s?signature=\"(.+)\""#)
   
+  public init() {
+    
+  }
+  
   public func authenticate(request: Vapor.Request) async throws {
     guard let signatureHeader = request.headers.first(name: "Signature") else {
       throw Abort(.unauthorized, reason: "Signature header missing, required for authenticated requests.")

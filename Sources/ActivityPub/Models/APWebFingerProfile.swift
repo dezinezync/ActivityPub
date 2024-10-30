@@ -18,5 +18,18 @@ public struct APWebFingerProfile: Content {
     public var type: String?
     public var href: String?
     public var template: String?
+    
+    public init(rel: String, type: String? = nil, href: String? = nil, template: String? = nil) {
+      self.rel = rel
+      self.type = type
+      self.href = href
+      self.template = template
+    }
+  }
+  
+  public init(subject: String, aliases: [String], links: [Link]) {
+    self.subject = subject
+    self.aliases = aliases
+    self.links = links
   }
 }

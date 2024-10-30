@@ -36,6 +36,16 @@ public struct APOutbox: APOrderedCollection, Content {
     case context = "@context"
     case id, type, totalItems, current, first, last, partOf, orderedItems
   }
+  
+  public init(id: URL, totalItems: UInt, current: UInt, first: URL, last: URL, partOf: URL, orderedItems: [Item]?) {
+    self.id = id
+    self.totalItems = totalItems
+    self.current = current
+    self.first = first
+    self.last = last
+    self.partOf = partOf
+    self.orderedItems = orderedItems
+  }
 }
 
 public struct APPostContainer: APItem, Content {

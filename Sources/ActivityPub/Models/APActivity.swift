@@ -36,6 +36,13 @@ public struct ActivityObject: Content {
   let type: APActivity.ActivityType
   let actor: String
   let object: String
+  
+  public init(id: String, type: APActivity.ActivityType, actor: String, object: String) {
+    self.id = id
+    self.type = type
+    self.actor = actor
+    self.object = object
+  }
 }
 
 // MARK: - APActivity
@@ -104,18 +111,53 @@ public struct APActivity: Content {
     // following two items used for `Undo` activity
     public var actor: URL?
     public var object: URL?
+    
+    public init(id: String, type: APActivity.ActivityType, summary: String? = nil, inReplyTo: String? = nil, published: Date? = nil, url: URL? = nil, attributedTo: URL? = nil, to: [URL]? = nil, cc: [URL]? = nil, sensitive: Bool? = nil, atomUri: URL? = nil, inReplyToAtomUri: URL? = nil, conversation: String? = nil, content: String? = nil, contentMap: [String : String]? = nil, attachment: [APPost.Attachment]? = nil, tag: [APActivity.Tag]? = nil, replies: APActivity.Replies? = nil, actor: URL? = nil, object: URL? = nil) {
+      self.id = id
+      self.type = type
+      self.summary = summary
+      self.inReplyTo = inReplyTo
+      self.published = published
+      self.url = url
+      self.attributedTo = attributedTo
+      self.to = to
+      self.cc = cc
+      self.sensitive = sensitive
+      self.atomUri = atomUri
+      self.inReplyToAtomUri = inReplyToAtomUri
+      self.conversation = conversation
+      self.content = content
+      self.contentMap = contentMap
+      self.attachment = attachment
+      self.tag = tag
+      self.replies = replies
+      self.actor = actor
+      self.object = object
+    }
   }
   
   public struct Tag: Content {
     public var type: String
     public var href: URL
     public var name: String
+    
+    public init(type: String, href: URL, name: String) {
+      self.type = type
+      self.href = href
+      self.name = name
+    }
   }
   
   public struct Replies: Content {
     public var id: String
     public var type: String
     public var first: First
+    
+    public init(id: String, type: String, first: APActivity.First) {
+      self.id = id
+      self.type = type
+      self.first = first
+    }
   }
   
   public struct First: Content {
@@ -123,6 +165,13 @@ public struct APActivity: Content {
     public var next: URL
     public var partOf: URL
     public var items: [String]
+    
+    public init(type: String, next: URL, partOf: URL, items: [String]) {
+      self.type = type
+      self.next = next
+      self.partOf = partOf
+      self.items = items
+    }
   }
   
   public struct Signature: Content {
@@ -130,6 +179,28 @@ public struct APActivity: Content {
     public var creator: URL
     public var created: Date
     public var signatureValue: String
+    
+    public init(type: String, creator: URL, created: Date, signatureValue: String) {
+      self.type = type
+      self.creator = creator
+      self.created = created
+      self.signatureValue = signatureValue
+    }
+  }
+  
+  public init(context: Either<String, [APActivityContexts.ContextItem]> = .right([
+    .string("https://www.w3.org/ns/activitystreams"),
+    .string("https://w3id.org/security/v1")
+  ]), id: String, type: APActivity.ActivityType, actor: URL, published: Date? = nil, to: [URL]? = nil, cc: [URL]? = nil, object: Either<APActivity.Object, Either<Tombstone, URL>>, signature: APActivity.Signature? = nil) {
+    self.context = context
+    self.id = id
+    self.type = type
+    self.actor = actor
+    self.published = published
+    self.to = to
+    self.cc = cc
+    self.object = object
+    self.signature = signature
   }
 }
 

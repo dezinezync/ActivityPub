@@ -34,6 +34,16 @@ public struct APFollowers: APOrderedCollection, Content {
     case context = "@context"
     case id, type, totalItems, current, first, last, partOf, orderedItems
   }
+  
+  public init(id: URL, totalItems: UInt, current: UInt, first: URL, last: URL, partOf: URL, orderedItems: [Item]?) {
+    self.id = id
+    self.totalItems = totalItems
+    self.current = current
+    self.first = first
+    self.last = last
+    self.partOf = partOf
+    self.orderedItems = orderedItems
+  }
 }
 
 // MARK: - APFollowing
@@ -63,11 +73,21 @@ public struct APFollowing: APOrderedCollection, Content {
     case context = "@context"
     case id, type, totalItems, current, first, last, partOf, orderedItems
   }
+  
+  public init(id: URL, totalItems: UInt, current: UInt, first: URL, last: URL, partOf: URL, orderedItems: [Item]?) {
+    self.id = id
+    self.totalItems = totalItems
+    self.current = current
+    self.first = first
+    self.last = last
+    self.partOf = partOf
+    self.orderedItems = orderedItems
+  }
 }
 
 // MARK: - APLiked
 /// Specifically a property of actors. This is a collection of Like activities performed by the actor, added to the collection as a side effect of delivery to the outbox.
-struct APLiked: APOrderedCollection, Content {
+public struct APLiked: APOrderedCollection, Content {
   public typealias Item = APPost
   
   public let context: URL = APContextURL
@@ -92,6 +112,16 @@ struct APLiked: APOrderedCollection, Content {
     case context = "@context"
     case id, type, totalItems, current, first, last, partOf, orderedItems
   }
+  
+  public init(id: URL, totalItems: UInt, current: UInt, first: URL, last: URL, partOf: URL, orderedItems: [Item]?) {
+    self.id = id
+    self.totalItems = totalItems
+    self.current = current
+    self.first = first
+    self.last = last
+    self.partOf = partOf
+    self.orderedItems = orderedItems
+  }
 }
 
 // MARK: - APFollower
@@ -108,7 +138,7 @@ public struct APFollower: APItem, Content {
   
   public let icon: [URL]
   
-  public init(id: URL, preferredUsername: String, inbox: URL, outbox: URL, icon: [URL]) {
+  public init(id: URL, preferredUsername: String, inbox: URL?, outbox: URL?, icon: [URL]) {
     self.id = id
     self.preferredUsername = preferredUsername
     self.inbox = inbox
@@ -135,15 +165,29 @@ public struct APPost: APItem, Content {
     public let mediaType: String
     public let name: String
     public let blurhash: String
+    
+    public init(type: String, url: URL, mediaType: String, name: String, blurhash: String) {
+      self.type = type
+      self.url = url
+      self.mediaType = mediaType
+      self.name = name
+      self.blurhash = blurhash
+    }
   }
   
   public struct Replies: Content {
     public let id: URL
     public var type: String = "Collection"
     public let first: APCollectionPage
+    
+    public init(id: URL, type: String = "Collection", first: APCollectionPage) {
+      self.id = id
+      self.type = type
+      self.first = first
+    }
   }
   
-  public init(id: URL, type: String, url: URL, attributedTo: URL, content: String, published: Date, summary: String, replies: Replies, attachment: [Attachment]) {
+  public init(id: URL, type: String = "Person", url: URL, attributedTo: URL, content: String, published: Date, summary: String, replies: Replies, attachment: [Attachment]) {
     self.id = id
     self.type = type
     self.url = url
@@ -161,4 +205,11 @@ public struct APCollectionPage: Content {
   public let next: URL
   public let partOf: URL
   public var items: [String] = []
+  
+  public init(type: String = "CollectionPage", next: URL, partOf: URL, items: [String] = []) {
+    self.type = type
+    self.next = next
+    self.partOf = partOf
+    self.items = items
+  }
 }

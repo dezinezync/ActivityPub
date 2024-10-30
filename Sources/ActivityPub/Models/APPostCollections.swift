@@ -30,6 +30,17 @@ public struct APPostComments: APOrderedCollection, Content {
   public let partOf: URL
   /// Only include if the page is defined
   public let orderedItems: [APPostComment]?
+  
+  public init(id: URL, type: String = "OrderedCollection", totalItems: UInt, current: UInt, first: URL, last: URL, partOf: URL, orderedItems: [APPostComment]?) {
+    self.id = id
+    self.type = type
+    self.totalItems = totalItems
+    self.current = current
+    self.first = first
+    self.last = last
+    self.partOf = partOf
+    self.orderedItems = orderedItems
+  }
 }
 
 // MARK: - APPostComment
@@ -57,7 +68,7 @@ public struct APPostComment: APItem, Content {
   
   public let replies: APPost.Replies
   
-  public init(id: URL, type: String, inReplyTo: URL?, published: Date, url: URL, attributedTo: URL, to: [String], cc: [String], sensitive: Bool, content: String, replies: APPost.Replies) {
+  public init(id: URL, type: String = "Note", inReplyTo: URL?, published: Date, url: URL, attributedTo: URL, to: [String], cc: [String], sensitive: Bool, content: String, replies: APPost.Replies) {
     self.id = id
     self.type = type
     self.inReplyTo = inReplyTo
