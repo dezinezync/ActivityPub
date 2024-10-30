@@ -142,7 +142,7 @@ A few key routes your server should implement so other servers in the network ca
 
 #### Contributions
 
-Your contributions for extending the source, documentation, bug fixes, etc. as always welcome. Remember to be kind to the contributors, maintainers, and others who are all trying to make things better, one utf8 character slice at a time ;)
+Your contributions for extending the source, documentation, bug fixes, etc. are always welcome. Remember to be kind to the contributors, maintainers, and others who are all trying to make things better, one utf8 character slice at a time ;)
 
 #### License
 
