@@ -85,7 +85,7 @@ let activity = APActivity(...)
 
 try await apFederation.federate(
   object: activity, 
-  to remotes: [...], 
+  to: [...], 
   actorKeyId: "https://example.com/myactor#main-key", 
   actorPrivateKey: actor.privateKey, 
   req
