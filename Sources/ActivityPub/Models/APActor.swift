@@ -38,7 +38,7 @@ public struct APActor: APPublicActor, Content {
   public var inbox: URL
   public var outbox: URL
   public var url: URL
-  public var preferredUsername: String
+  public var preferredUsername: String?
   public var name: String
   public var summary: String
   public var icon: Icon?
