@@ -49,6 +49,10 @@ public func fetchActorProfile(from actorURL: URI, using req: Request) async thro
     ("Accept", JSON_LD_HEADER)
   ]))
   
+  guard res.status.code < 299 else {
+    throw Abort(res.status)
+  }
+  
   let actor: any APPublicActor
   
   do {
