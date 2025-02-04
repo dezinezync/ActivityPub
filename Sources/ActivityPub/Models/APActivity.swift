@@ -31,7 +31,7 @@ extension APActivityResponse {
 }
 
 // Nested structure for the "object" part of the JSON.
-public struct ActivityObject: Content {
+public struct ActivityObject: Content, Sendable {
   let id: String
   let type: APActivity.ActivityType
   let actor: String
@@ -47,7 +47,7 @@ public struct ActivityObject: Content {
 
 // MARK: - APActivity
 public struct APActivity: Content {
-  public enum ActivityType: String, Codable {
+  public enum ActivityType: String, Codable, Sendable {
     case comment = "Comment"
     case note = "Note"
     case create = "Create"

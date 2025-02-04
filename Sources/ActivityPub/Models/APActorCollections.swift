@@ -187,7 +187,7 @@ public struct APPost: APItem, Content {
     }
   }
   
-  public init(id: URL, type: String = "Person", url: URL, attributedTo: URL, content: String, published: Date, summary: String, replies: Replies, attachment: [Attachment]) {
+  public init(id: URL, type: String = "Note", url: URL, attributedTo: URL, content: String, published: Date, summary: String, replies: Replies, attachment: [Attachment]) {
     self.id = id
     self.type = type
     self.url = url
