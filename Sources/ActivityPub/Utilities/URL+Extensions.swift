@@ -33,7 +33,7 @@ extension URL {
   func appending(queryItems: [URLQueryItem]) -> URL {
     guard var components = URLComponents(url: self, resolvingAgainstBaseURL: true) else {
       #if DEBUG
-      fatalError("Failed to form components from \(url)")
+      fatalError("Failed to form components from \(self)")
       #endif
       return self
     }
