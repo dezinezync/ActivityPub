@@ -132,7 +132,7 @@ keyId="\(actorKeyId)",headers="\(headers.joined(separator: " "))",signature="\(e
 }
 
 // MARK: - HTTPStatus
-extension HTTPStatus: Comparable {
+extension HTTPStatus: @retroactive Comparable {
   public static func < (lhs: HTTPResponseStatus, rhs: HTTPResponseStatus) -> Bool {
     lhs.code < rhs.code
   }

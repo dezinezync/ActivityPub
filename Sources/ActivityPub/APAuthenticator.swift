@@ -22,7 +22,7 @@ public struct APAuthenticator: AsyncRequestAuthenticator {
     return formatter
   }()
   
-  public let signatureRegExp = try! Regex(#"keyId=\"(.+)\",\s?headers=\"(.+)\",\s?signature=\"(.+)\""#)
+  nonisolated(unsafe) public let signatureRegExp = try! Regex(#"keyId=\"(.+)\",\s?headers=\"(.+)\",\s?signature=\"(.+)\""#)
   
   public init() {
     

@@ -8,13 +8,13 @@
 import Foundation
 import Vapor
 
-public struct APInboxItem: APItem {
+public struct APInboxItem: APItem, @unchecked Sendable {
   
 }
 
 // MARK: - APInbox
 /// The inbox stream contains all activities received by the actor. The server SHOULD filter content according to the requester's permission. In general, the owner of an inbox is likely to be able to access all of their inbox contents.
-public struct APInbox: APOrderedCollection, Content {
+public struct APInbox: APOrderedCollection, Content, @unchecked Sendable {
   public typealias Item = APInboxItem
   
   public let context: URL = APContextURL

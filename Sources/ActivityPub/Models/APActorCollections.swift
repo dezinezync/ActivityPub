@@ -9,7 +9,7 @@ import Foundation
 import Vapor
 
 // MARK: - APFollowers
-public struct APFollowers: APOrderedCollection, Content {
+public struct APFollowers: APOrderedCollection, Content, @unchecked Sendable {
   public typealias Item = APFollower
   
   public let context: URL = APContextURL
@@ -47,7 +47,7 @@ public struct APFollowers: APOrderedCollection, Content {
 }
 
 // MARK: - APFollowing
-public struct APFollowing: APOrderedCollection, Content {
+public struct APFollowing: APOrderedCollection, Content, @unchecked Sendable {
   public typealias Item = APFollower
   
   public let context: URL = APContextURL
@@ -87,7 +87,7 @@ public struct APFollowing: APOrderedCollection, Content {
 
 // MARK: - APLiked
 /// Specifically a property of actors. This is a collection of Like activities performed by the actor, added to the collection as a side effect of delivery to the outbox.
-public struct APLiked: APOrderedCollection, Content {
+public struct APLiked: APOrderedCollection, Content, @unchecked Sendable {
   public typealias Item = APPost
   
   public let context: URL = APContextURL
@@ -125,7 +125,7 @@ public struct APLiked: APOrderedCollection, Content {
 }
 
 // MARK: - APFollower
-public struct APFollower: APItem, Content {
+public struct APFollower: APItem, Content, @unchecked Sendable {
   public let id: URL
   
   public var type = "Person"
@@ -148,7 +148,7 @@ public struct APFollower: APItem, Content {
 }
 
 // MARK: - APPost
-public struct APPost: APItem, Content {
+public struct APPost: APItem, Content, @unchecked Sendable {
   public let id: URL
   public var type: String = "Note"
   public let url: URL
@@ -159,7 +159,7 @@ public struct APPost: APItem, Content {
   public let replies: Replies
   public let attachment: [Attachment]
   
-  public struct Attachment: Content {
+  public struct Attachment: Content, @unchecked Sendable {
     public let type: String
     public let url: URL
     public let mediaType: String
@@ -175,7 +175,7 @@ public struct APPost: APItem, Content {
     }
   }
   
-  public struct Replies: Content {
+  public struct Replies: Content, @unchecked Sendable {
     public let id: URL
     public var type: String = "Collection"
     public let first: APCollectionPage
@@ -200,7 +200,7 @@ public struct APPost: APItem, Content {
   }
 }
 
-public struct APCollectionPage: Content {
+public struct APCollectionPage: Content, @unchecked Sendable {
   public var type: String = "CollectionPage"
   public let next: URL
   public let partOf: URL

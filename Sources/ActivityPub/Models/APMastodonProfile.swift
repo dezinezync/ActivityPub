@@ -8,7 +8,7 @@
 import Foundation
 import Vapor
 
-public struct APMastodonProfile: APPublicActor, Content {
+public struct APMastodonProfile: APPublicActor, Content, @unchecked Sendable {
   public var preferredUsername: String
   public var endpoints: Endpoints
   public var outbox: String
@@ -34,39 +34,39 @@ public struct APMastodonProfile: APPublicActor, Content {
   public var attachment: [Attachment]
   public var inbox: String
   
-  public struct Endpoints: Content {
+  public struct Endpoints: Content, @unchecked Sendable {
     public var sharedInbox: String
   }
   
-  public struct Media: Content {
+  public struct Media: Content, @unchecked Sendable {
     public var type: String
     public var mediaType: String
     public var url: String
   }
   
-  public struct PublicKey: ActorPublicKey, Content {
+  public struct PublicKey: ActorPublicKey, Content, @unchecked Sendable {
     public var id: String
     public var owner: String
     public var publicKeyPem: String
   }
   
-  public struct Attachment: Content {
+  public struct Attachment: Content, @unchecked Sendable {
     public var type: String
     public var name: String
     public var value: String
   }
   
-  public struct TypeIdPair: Content {
+  public struct TypeIdPair: Content, @unchecked Sendable {
     public var type: String
     public var id: String
   }
   
-  public struct FocalPoint: Content {
+  public struct FocalPoint: Content, @unchecked Sendable {
     public var container: String
     public var id: String
   }
   
-  public struct Tag: Content {
+  public struct Tag: Content, @unchecked Sendable {
     public let id: String
     public let type: String
     public let name: String?

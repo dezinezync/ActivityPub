@@ -46,7 +46,7 @@ public struct ActivityObject: Content, Sendable {
 }
 
 // MARK: - APActivity
-public struct APActivity: Content {
+public struct APActivity: Content, @unchecked Sendable {
   public enum ActivityType: String, Codable, Sendable {
     case comment = "Comment"
     case note = "Note"
@@ -89,7 +89,7 @@ public struct APActivity: Content {
     case signature
   }
   
-  public struct Object: Content {
+  public struct Object: Content, @unchecked Sendable {
     public var id: String
     public var type: ActivityType
     public var summary: String?
@@ -136,7 +136,7 @@ public struct APActivity: Content {
     }
   }
   
-  public struct Tag: Content {
+  public struct Tag: Content, @unchecked Sendable {
     public var type: String
     public var href: URL
     public var name: String
@@ -148,7 +148,7 @@ public struct APActivity: Content {
     }
   }
   
-  public struct Replies: Content {
+  public struct Replies: Content, @unchecked Sendable {
     public var id: String
     public var type: String
     public var first: First
@@ -174,7 +174,7 @@ public struct APActivity: Content {
     }
   }
   
-  public struct Signature: Content {
+  public struct Signature: Content, @unchecked Sendable {
     public var type: String
     public var creator: URL
     public var created: Date
@@ -205,14 +205,14 @@ public struct APActivity: Content {
 }
 
 // MARK: - Tombstone
-public struct Tombstone: Content {
+public struct Tombstone: Content, @unchecked Sendable {
   public let id: String
   public let type: APActivity.ActivityType
   public let atomUri: String?
 }
 
 // MARK: - APActivityContexts
-public struct APActivityContexts: Codable {
+public struct APActivityContexts: Codable, @unchecked Sendable {
   public var items: [ContextItem]
   
   public enum ContextItem: Codable {
@@ -238,7 +238,7 @@ public struct APActivityContexts: Codable {
     }
   }
 
-  public struct ComplexContext: Codable {
+  public struct ComplexContext: Codable, @unchecked Sendable {
     public var ostatus: String = "http://ostatus.org#"
     public var atomUri: String? = "ostatus:atomUri"
     public var inReplyToAtomUri: String? = "ostatus:inReplyToAtomUri"

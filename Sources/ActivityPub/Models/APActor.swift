@@ -23,7 +23,7 @@ public protocol APPublicActor {
 }
 
 // MARK: - APActor
-public struct APActor: APPublicActor, Content {
+public struct APActor: APPublicActor, Content, @unchecked Sendable {
   public enum ActorType: String, Codable {
     case person = "Person"
     case team = "Team"
