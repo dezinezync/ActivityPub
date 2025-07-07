@@ -1,4 +1,4 @@
-// swift-tools-version: 6.1
+// swift-tools-version:6.1
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -17,7 +17,7 @@ let package = Package(
   ],
   dependencies: [
     .package(url: "https://github.com/vapor/vapor.git", from: "4.106.1"),
-    .package(url: "https://github.com/apple/swift-crypto.git", branch: "main"),
+    .package(url: "https://github.com/apple/swift-crypto.git", branch: "3.12.3"),
   ],
   targets: [
     // Targets are the basic building blocks of a package, defining a module or a test suite.

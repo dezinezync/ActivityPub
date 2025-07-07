@@ -119,7 +119,7 @@ public struct APAuthenticator: AsyncRequestAuthenticator {
   fileprivate func prepareSignedData(from request: Request, headersList: [String]) -> Data {
     let signingStrings: [String] = headersList.compactMap { header in
       if header == "(request-target)" {
-        return "\(header): \(request.method.string.lowercased()) \(request.url.path)"
+        return "\(header): \(request.method.rawValue.lowercased()) \(request.url.path)"
       }
       
       if let headerValue = request.headers.first(name: header) {
