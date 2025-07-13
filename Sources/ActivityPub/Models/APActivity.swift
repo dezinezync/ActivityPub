@@ -6,9 +6,8 @@
 //
 
 import Foundation
-import Vapor
 
-public protocol APActivityResponse: Content, AsyncResponseEncodable {
+public protocol APActivityResponse: APContent {
   var context: [String] { get }
   var id: String { get }
   var type: APActivity.ActivityType { get }
@@ -16,22 +15,25 @@ public protocol APActivityResponse: Content, AsyncResponseEncodable {
   var object: Either<ActivityObject, URL> { get }
 }
 
+/*
+// @TODO: Move to implementation
 extension APActivityResponse {
   public func encodeResponse(for request: Request) async throws -> Response {
-    let encoder = try ContentConfiguration.global.requireEncoder(for: .activityJSON)
+    let encoder = try APContentConfiguration.global.requireEncoder(for: .activityJSON)
     var headers = HTTPHeaders()
     var byteBuffer = ByteBuffer()
     
     try encoder.encode(self, to: &byteBuffer, headers: &headers)
 
-    headers.remove(name: .contentType)
-    headers.add(name: .contentType, value: "application/activity+json")
+    headers.remove(name: .APContentType)
+    headers.add(name: .APContentType, value: "application/activity+json")
     return Response(status: .ok, headers: headers, body: Response.Body(buffer: byteBuffer))
   }
 }
+*/
 
 // Nested structure for the "object" part of the JSON.
-public struct ActivityObject: Content, Sendable {
+public struct ActivityObject: APContent, Sendable {
   let id: String
   let type: APActivity.ActivityType
   let actor: String
@@ -46,7 +48,7 @@ public struct ActivityObject: Content, Sendable {
 }
 
 // MARK: - APActivity
-public struct APActivity: Content, @unchecked Sendable {
+public struct APActivity: APContent, @unchecked Sendable {
   public enum ActivityType: String, Codable, Sendable {
     case comment = "Comment"
     case note = "Note"
@@ -89,7 +91,7 @@ public struct APActivity: Content, @unchecked Sendable {
     case signature
   }
   
-  public struct Object: Content, @unchecked Sendable {
+  public struct Object: APContent, @unchecked Sendable {
     public var id: String
     public var type: ActivityType
     public var summary: String?
@@ -103,8 +105,8 @@ public struct APActivity: Content, @unchecked Sendable {
     public var atomUri: URL?
     public var inReplyToAtomUri: URL?
     public var conversation: String?
-    public var content: String?
-    public var contentMap: [String: String]?
+    public var APContent: String?
+    public var APContentMap: [String: String]?
     public var attachment: [APPost.Attachment]?
     public var tag: [Tag]?
     public var replies: Replies?
@@ -112,7 +114,7 @@ public struct APActivity: Content, @unchecked Sendable {
     public var actor: URL?
     public var object: URL?
     
-    public init(id: String, type: APActivity.ActivityType, summary: String? = nil, inReplyTo: String? = nil, published: Date? = nil, url: URL? = nil, attributedTo: URL? = nil, to: [URL]? = nil, cc: [URL]? = nil, sensitive: Bool? = nil, atomUri: URL? = nil, inReplyToAtomUri: URL? = nil, conversation: String? = nil, content: String? = nil, contentMap: [String : String]? = nil, attachment: [APPost.Attachment]? = nil, tag: [APActivity.Tag]? = nil, replies: APActivity.Replies? = nil, actor: URL? = nil, object: URL? = nil) {
+    public init(id: String, type: APActivity.ActivityType, summary: String? = nil, inReplyTo: String? = nil, published: Date? = nil, url: URL? = nil, attributedTo: URL? = nil, to: [URL]? = nil, cc: [URL]? = nil, sensitive: Bool? = nil, atomUri: URL? = nil, inReplyToAtomUri: URL? = nil, conversation: String? = nil, APContent: String? = nil, APContentMap: [String : String]? = nil, attachment: [APPost.Attachment]? = nil, tag: [APActivity.Tag]? = nil, replies: APActivity.Replies? = nil, actor: URL? = nil, object: URL? = nil) {
       self.id = id
       self.type = type
       self.summary = summary
@@ -126,8 +128,8 @@ public struct APActivity: Content, @unchecked Sendable {
       self.atomUri = atomUri
       self.inReplyToAtomUri = inReplyToAtomUri
       self.conversation = conversation
-      self.content = content
-      self.contentMap = contentMap
+      self.APContent = APContent
+      self.APContentMap = APContentMap
       self.attachment = attachment
       self.tag = tag
       self.replies = replies
@@ -136,7 +138,7 @@ public struct APActivity: Content, @unchecked Sendable {
     }
   }
   
-  public struct Tag: Content, @unchecked Sendable {
+  public struct Tag: APContent, @unchecked Sendable {
     public var type: String
     public var href: URL
     public var name: String
@@ -148,7 +150,7 @@ public struct APActivity: Content, @unchecked Sendable {
     }
   }
   
-  public struct Replies: Content, @unchecked Sendable {
+  public struct Replies: APContent, @unchecked Sendable {
     public var id: String
     public var type: String
     public var first: First
@@ -160,7 +162,7 @@ public struct APActivity: Content, @unchecked Sendable {
     }
   }
   
-  public struct First: Content {
+  public struct First: APContent {
     public var type: String
     public var next: URL
     public var partOf: URL
@@ -174,7 +176,7 @@ public struct APActivity: Content, @unchecked Sendable {
     }
   }
   
-  public struct Signature: Content, @unchecked Sendable {
+  public struct Signature: APContent, @unchecked Sendable {
     public var type: String
     public var creator: URL
     public var created: Date
@@ -205,7 +207,7 @@ public struct APActivity: Content, @unchecked Sendable {
 }
 
 // MARK: - Tombstone
-public struct Tombstone: Content, @unchecked Sendable {
+public struct Tombstone: APContent, @unchecked Sendable {
   public let id: String
   public let type: APActivity.ActivityType
   public let atomUri: String?

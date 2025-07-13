@@ -5,8 +5,10 @@
 //  Created by Nikhil Nigade on 30/10/24.
 //
 
-import Vapor
+import Foundation
 import _CryptoExtras
+import NIOCore
+import NIOHTTP1
 
 open class APFederationHost {
   public static let encoder: JSONEncoder = {
@@ -18,14 +20,14 @@ open class APFederationHost {
     return encoder
   }()
   
-  open func federate(object: any APActivityResponse, to remotes: [URL], actorKeyId: String, actorPrivateKey: String, _ req: Request) async throws {
+  open func federate(object: any APActivityResponse, to remotes: [URL], actorKeyId: String, actorPrivateKey: String, _ req: APNetworkingRequest) async throws {
     let encodedObject = try Self.encoder.encode(object)
     
     let privateKey = try _RSA.Signing.PrivateKey(pemRepresentation: actorPrivateKey)
     
     // 1. Generate the content hash using the private key of the user who will be notifying this
     guard let encodedDigest = encodedObject.sha256Data()?.base64EncodedString() else {
-      throw Abort(.internalServerError, reason: "Failed to form base64 encoded representation of the object.")
+      throw APAbortError(.internalServerError, reason: "Failed to form base64 encoded representation of the object.")
     }
     
     // 2. Prepare the string to sign
@@ -36,14 +38,14 @@ open class APFederationHost {
     
     for remote in remotes {
       guard let host = remote.host() else {
-        req.logger.warning("No valid host for remote in \(String.init(describing: object)), exiting")
+        req.logger.warning("No valid host for remote in \(String.init(describing: object)), exiting", metadata: nil, file: #file, function: #function, line: #line)
         continue
       }
       
       let path = remote.path()
       
       guard !path.isEmpty else {
-        req.logger.warning("No valid path for remote in \(String.init(describing: object)), exiting")
+        req.logger.warning("No valid path for remote in \(String.init(describing: object)), exiting", metadata: nil, file: #file, function: #function, line: #line)
         continue
       }
       
@@ -53,7 +55,7 @@ open class APFederationHost {
         continue
       }
       
-      req.logger.info("stringToSign: \(stringToSign); base64: \(stringToSignData.base64EncodedString())")
+      req.logger.info("stringToSign: \(stringToSign); base64: \(stringToSignData.base64EncodedString())", metadata: nil, file: #file, function: #function, line: #line)
       
       // 3. Sign the string using our user's private key
       //
@@ -82,7 +84,7 @@ keyId="\(actorKeyId)",headers="\(headers.joined(separator: " "))",signature="\(e
     }
   }
   
-  open func notify(remote: URL, digest: String, dateHeader: String, signature: String, content: any Content, request: Vapor.Request) async throws {
+  open func notify(remote: URL, digest: String, dateHeader: String, signature: String, content: any APContent, request: APNetworkingRequest) async throws {
     guard let host = remote.host() else {
       return
     }
@@ -91,11 +93,11 @@ keyId="\(actorKeyId)",headers="\(headers.joined(separator: " "))",signature="\(e
       return
     }
     
-    request.logger.info("Notifying: url: \(remote); digest: \(digest); date: \(dateHeader); signature: \(signature);")
+    request.logger.info("Notifying: url: \(remote); digest: \(digest); date: \(dateHeader); signature: \(signature);", metadata: nil, file: #file, function: #function, line: #line)
     
     do {
       let response = try await request.client.post(
-        URI(string: remote.absoluteString),
+        remote.absoluteString,
         headers: HTTPHeaders([
           ("Host", host),
           ("Date", dateHeader),
@@ -103,36 +105,55 @@ keyId="\(actorKeyId)",headers="\(headers.joined(separator: " "))",signature="\(e
           ("Content-Type", ACTIVITY_JSON_HEADER),
           ("Signature", signature)
         ])) { req in
-          try req.content.encode(content, as: .activityJSON)
+          #if canImport(Vapor)
+          try req.content?.encode(content, as: .activityJSON)
+          #else
+          try req.content?.encode(content, as: "application/activity+json")
+          #endif
           req.headers.replaceOrAdd(name: .contentType, value: ACTIVITY_JSON_HEADER)
         }
       
       // @TODO: Inspect Response to ensure everything is okay
-      switch response.status {
+      switch response.0.status {
       case .accepted...(.imUsed):
-        request.logger.info("Notified \(remote); status: \(response.status);")
+        request.logger.info("Notified \(remote); status: \(response.0.status);", metadata: nil, file: #file, function: #function, line: #line)
       default:
-        if let data = response.body,
-           response.content.contentType == .json || response.content.contentType == .activityJSON,
-           let jsonObject = try? JSONSerialization.jsonObject(with: data) {
-          request.logger.warning("Failed to notify \(remote); digest \(digest); date: \(dateHeader); signature: \(signature); response: \(jsonObject)")
+        #if canImport(Vapor)
+        if response.0.content.contentType == .json || response.0.content.contentType == .activityJSON,
+           let jsonObject = try? JSONSerialization.jsonObject(with: response.1) {
+          request.logger.warning("Failed to notify \(remote); digest \(digest); date: \(dateHeader); signature: \(signature); response: \(jsonObject)", metadata: nil, file: #file, function: #function, line: #line)
         }
         else {
-          let data = response.body != nil ? Data(buffer: response.body!) : Data()
-          request.logger.warning("Failed to notify \(remote); digest \(digest); date: \(dateHeader); signature: \(signature); response: \(String(describing: String(data: data, encoding: .utf8)))")
+          let data = response.1
+          request.logger.warning("Failed to notify \(remote); digest \(digest); date: \(dateHeader); signature: \(signature); response: \(String(describing: String(data: data, encoding: .utf8)))", metadata: nil, file: #file, function: #function, line: #line)
         }
+        #else
+        guard let mimeType = response.0.content.mimeType else {
+          request.logger.warning("No mimetype, ignoring", metadata: nil, file: #file, function: #function, line: #line)
+          return
+        }
+        
+        if mimeType.contains("json") || mimeType.contains("activity+json"),
+           let jsonObject = try? JSONSerialization.jsonObject(with: response.1) {
+          request.logger.warning("Failed to notify \(remote); digest \(digest); date: \(dateHeader); signature: \(signature); response: \(jsonObject)", metadata: nil, file: #file, function: #function, line: #line)
+        }
+        else {
+          let data = response.1
+          request.logger.warning("Failed to notify \(remote); digest \(digest); date: \(dateHeader); signature: \(signature); response: \(String(describing: String(data: data, encoding: .utf8)))", metadata: nil, file: #file, function: #function, line: #line)
+        }
+        #endif
       }
     }
     catch {
       // @TODO: Observe Error
       // Errors like host unavailable, timeout, SSL errors should be queued for retrying
-      request.logger.error("Error notifying \(remote); digest \(digest); date: \(dateHeader); signature: \(signature); error: \(error.localizedDescription); \((error as NSError).code)")
+      request.logger.error("Error notifying \(remote); digest \(digest); date: \(dateHeader); signature: \(signature); error: \(error.localizedDescription); \((error as NSError).code)", metadata: nil, file: #file, function: #function, line: #line)
     }
   }
 }
 
-// MARK: - HTTPStatus
-extension HTTPStatus: @retroactive Comparable {
+// MARK: - HTTPResponseStatus
+extension HTTPResponseStatus: @retroactive Comparable {
   public static func < (lhs: HTTPResponseStatus, rhs: HTTPResponseStatus) -> Bool {
     lhs.code < rhs.code
   }

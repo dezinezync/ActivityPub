@@ -6,10 +6,9 @@
 //
 
 import Foundation
-import Vapor
 
 /// Represents a user account from a Mastodon-compatible API
-public struct APLookupProfile: Content, @unchecked Sendable {
+public struct APLookupProfile: APContent, @unchecked Sendable {
   /// The unique identifier of the account
   public let id: String
   

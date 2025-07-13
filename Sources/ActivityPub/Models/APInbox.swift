@@ -6,15 +6,14 @@
 //
 
 import Foundation
-import Vapor
 
 public struct APInboxItem: APItem, @unchecked Sendable {
   
 }
 
 // MARK: - APInbox
-/// The inbox stream contains all activities received by the actor. The server SHOULD filter content according to the requester's permission. In general, the owner of an inbox is likely to be able to access all of their inbox contents.
-public struct APInbox: APOrderedCollection, Content, @unchecked Sendable {
+/// The inbox stream contains all activities received by the actor. The server SHOULD filter APContent according to the requester's permission. In general, the owner of an inbox is likely to be able to access all of their inbox APContents.
+public struct APInbox: APOrderedCollection, APContent, @unchecked Sendable {
   public typealias Item = APInboxItem
   
   public let context: URL = APContextURL

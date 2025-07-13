@@ -6,10 +6,9 @@
 //
 
 import Foundation
-import Vapor
 
 // MARK: - APPostComments
-public struct APPostComments: APOrderedCollection, Content, @unchecked Sendable {
+public struct APPostComments: APOrderedCollection, APContent, @unchecked Sendable {
   public typealias Item = APPostComment
   
   public var context: URL = APContextURL
@@ -44,7 +43,7 @@ public struct APPostComments: APOrderedCollection, Content, @unchecked Sendable 
 }
 
 // MARK: - APPostComment
-public struct APPostComment: APItem, Content, @unchecked Sendable {
+public struct APPostComment: APItem, APContent, @unchecked Sendable {
   public let id: URL
   
   public var type: String = "Note"
@@ -64,11 +63,11 @@ public struct APPostComment: APItem, Content, @unchecked Sendable {
   
   public let sensitive: Bool
   
-  public let content: String
+  public let APContent: String
   
   public let replies: APPost.Replies
   
-  public init(id: URL, type: String = "Note", inReplyTo: URL?, published: Date, url: URL, attributedTo: URL, to: [String], cc: [String], sensitive: Bool, content: String, replies: APPost.Replies) {
+  public init(id: URL, type: String = "Note", inReplyTo: URL?, published: Date, url: URL, attributedTo: URL, to: [String], cc: [String], sensitive: Bool, APContent: String, replies: APPost.Replies) {
     self.id = id
     self.type = type
     self.inReplyTo = inReplyTo
@@ -78,7 +77,7 @@ public struct APPostComment: APItem, Content, @unchecked Sendable {
     self.to = to
     self.cc = cc
     self.sensitive = sensitive
-    self.content = content
+    self.APContent = APContent
     self.replies = replies
   }
 }

@@ -6,10 +6,9 @@
 //
 
 import Foundation
-import Vapor
 
 // MARK: - APFollowers
-public struct APFollowers: APOrderedCollection, Content, @unchecked Sendable {
+public struct APFollowers: APOrderedCollection, APContent, @unchecked Sendable {
   public typealias Item = APFollower
   
   public let context: URL = APContextURL
@@ -47,7 +46,7 @@ public struct APFollowers: APOrderedCollection, Content, @unchecked Sendable {
 }
 
 // MARK: - APFollowing
-public struct APFollowing: APOrderedCollection, Content, @unchecked Sendable {
+public struct APFollowing: APOrderedCollection, APContent, @unchecked Sendable {
   public typealias Item = APFollower
   
   public let context: URL = APContextURL
@@ -87,7 +86,7 @@ public struct APFollowing: APOrderedCollection, Content, @unchecked Sendable {
 
 // MARK: - APLiked
 /// Specifically a property of actors. This is a collection of Like activities performed by the actor, added to the collection as a side effect of delivery to the outbox.
-public struct APLiked: APOrderedCollection, Content, @unchecked Sendable {
+public struct APLiked: APOrderedCollection, APContent, @unchecked Sendable {
   public typealias Item = APPost
   
   public let context: URL = APContextURL
@@ -125,7 +124,7 @@ public struct APLiked: APOrderedCollection, Content, @unchecked Sendable {
 }
 
 // MARK: - APFollower
-public struct APFollower: APItem, Content, @unchecked Sendable {
+public struct APFollower: APItem, APContent, @unchecked Sendable {
   public let id: URL
   
   public var type = "Person"
@@ -148,18 +147,18 @@ public struct APFollower: APItem, Content, @unchecked Sendable {
 }
 
 // MARK: - APPost
-public struct APPost: APItem, Content, @unchecked Sendable {
+public struct APPost: APItem, APContent, @unchecked Sendable {
   public let id: URL
   public var type: String = "Note"
   public let url: URL
   public let attributedTo: URL
-  public let content: String
+  public let APContent: String
   public let published: Date
   public let summary: String
   public let replies: Replies
   public let attachment: [Attachment]
   
-  public struct Attachment: Content, @unchecked Sendable {
+  public struct Attachment: APContent, @unchecked Sendable {
     public let type: String
     public let url: URL
     public let mediaType: String
@@ -175,7 +174,7 @@ public struct APPost: APItem, Content, @unchecked Sendable {
     }
   }
   
-  public struct Replies: Content, @unchecked Sendable {
+  public struct Replies: APContent, @unchecked Sendable {
     public let id: URL
     public var type: String = "Collection"
     public let first: APCollectionPage
@@ -187,12 +186,12 @@ public struct APPost: APItem, Content, @unchecked Sendable {
     }
   }
   
-  public init(id: URL, type: String = "Note", url: URL, attributedTo: URL, content: String, published: Date, summary: String, replies: Replies, attachment: [Attachment]) {
+  public init(id: URL, type: String = "Note", url: URL, attributedTo: URL, APContent: String, published: Date, summary: String, replies: Replies, attachment: [Attachment]) {
     self.id = id
     self.type = type
     self.url = url
     self.attributedTo = attributedTo
-    self.content = content
+    self.APContent = APContent
     self.published = published
     self.summary = summary
     self.replies = replies
@@ -200,7 +199,7 @@ public struct APPost: APItem, Content, @unchecked Sendable {
   }
 }
 
-public struct APCollectionPage: Content, @unchecked Sendable {
+public struct APCollectionPage: APContent, @unchecked Sendable {
   public var type: String = "CollectionPage"
   public let next: URL
   public let partOf: URL
