@@ -9,7 +9,7 @@ import Foundation
 import Vapor
 
 /// Represents a user account from a Mastodon-compatible API
-public struct APLookupProfile: Content, @unchecked Sendable {
+public struct APLookupProfile: Content, Sendable {
   /// The unique identifier of the account
   public let id: String
   
@@ -83,7 +83,7 @@ public struct APLookupProfile: Content, @unchecked Sendable {
   public let fields: [Field]
   
   /// Represents a profile metadata field
-  public struct Field: Codable {
+  public struct Field: Codable, Sendable {
     /// The label of the field
     public let name: String
     
