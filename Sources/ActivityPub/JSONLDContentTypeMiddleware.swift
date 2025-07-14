@@ -5,6 +5,7 @@
 //  Created by Nikhil Nigade on 17/08/24.
 //
 
+#if canImport(Vapor)
 import Vapor
 
 public final class JSONLDContentTypeMiddleware: Middleware {
@@ -19,3 +20,4 @@ public final class JSONLDContentTypeMiddleware: Middleware {
     }
   }
 }
+#endif
