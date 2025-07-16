@@ -9,6 +9,7 @@ import Foundation
 import NIOHTTP1
 import NIOCore
 import NIOFoundationCompat
+import Logging
 
 #if canImport(Vapor)
 import Vapor
@@ -16,27 +17,8 @@ import Vapor
 
 // MARK: - Content
 public protocol APNetworkingContent {
-  var body: ByteBuffer? { get set }
-  
-  #if canImport(Vapor)
-  var contentType: HTTPMediaType { get }
-  
-  func encode<C: Content>(_ content: C, as contentType: HTTPMediaType) throws
-  #else
-  var mimeType: String? { get }
-  
-  func encode<C: Codable>(_ content: C, as contentType: String) throws
-  #endif
+  var body: Data? { get }
 }
-
-#if !canImport(Vapor)
-extension APNetworkingContent {
-  mutating func encode<C: Codable>(_ content: C, as contentType: String) throws {
-    let data = try JSONEncoder().encode(content)
-    self.body = ByteBuffer(data: data)
-  }
-}
-#endif
 
 // MARK: - Request
 public protocol APNetworkingRequest {
@@ -44,15 +26,31 @@ public protocol APNetworkingRequest {
   
   var uri: CustomStringConvertible { get set }
   
-  var url: URL { get }
+  var resourceURL: URL? { get }
   
   var headers: HTTPHeaders { get set }
   
-  var logger: APLogging { get }
+  var logger: Logger { get }
   
-  var client: APNetworking { get }
+  // MARK: Network Request
+  func get(_ url: CustomStringConvertible, headers: HTTPHeaders) async throws -> (APNetworkingResponse, ByteBuffer?)
   
-  var content: APNetworkingContent? { get set }
+  #if canImport(Vapor)
+  func post<C>(_ url: CustomStringConvertible, headers: HTTPHeaders, body: C, contentType: HTTPMediaType) async throws -> (APNetworkingResponse, ByteBuffer?) where C: APContent
+  #else
+  func post<C>(_ url: CustomStringConvertible, headers: HTTPHeaders, body: C, contentType: String) async throws -> (APNetworkingResponse, ByteBuffer?) where C: APContent
+  #endif
+  
+  // MARK: Encoding Data
+  #if canImport(Vapor)
+  var contentType: HTTPMediaType? { get }
+
+  func encode<C: Content>(_ content: C, as contentType: HTTPMediaType) throws
+  #else
+  var mimeType: String? { get }
+
+  func encode<C: Codable>(_ content: C, as contentType: String) throws
+  #endif
 }
 
 // MARK: - Response
@@ -60,14 +58,5 @@ public protocol APNetworkingRequest {
 public protocol APNetworkingResponse {
   var status: HTTPResponseStatus { get }
   var headers: HTTPHeaders { get }
-  var body: ByteBuffer? { get }
-  var content: APNetworkingContent { get }
-}
-
-// MARK: - Networking
-
-public protocol APNetworking {
-  func get(_ url: CustomStringConvertible, headers: HTTPHeaders) async throws -> (APNetworkingResponse, Data)
-  
-  func post(_ url: CustomStringConvertible, headers: HTTPHeaders, beforeSend: (inout APNetworkingRequest) throws -> ()) async throws -> (APNetworkingResponse, Data)
+  var contentType: HTTPMediaType { get }
 }

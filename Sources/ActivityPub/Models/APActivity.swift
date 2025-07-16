@@ -105,8 +105,8 @@ public struct APActivity: APContent, @unchecked Sendable {
     public var atomUri: URL?
     public var inReplyToAtomUri: URL?
     public var conversation: String?
-    public var APContent: String?
-    public var APContentMap: [String: String]?
+    public var content: String?
+    public var contentMap: [String: String]?
     public var attachment: [APPost.Attachment]?
     public var tag: [Tag]?
     public var replies: Replies?
@@ -114,7 +114,7 @@ public struct APActivity: APContent, @unchecked Sendable {
     public var actor: URL?
     public var object: URL?
     
-    public init(id: String, type: APActivity.ActivityType, summary: String? = nil, inReplyTo: String? = nil, published: Date? = nil, url: URL? = nil, attributedTo: URL? = nil, to: [URL]? = nil, cc: [URL]? = nil, sensitive: Bool? = nil, atomUri: URL? = nil, inReplyToAtomUri: URL? = nil, conversation: String? = nil, APContent: String? = nil, APContentMap: [String : String]? = nil, attachment: [APPost.Attachment]? = nil, tag: [APActivity.Tag]? = nil, replies: APActivity.Replies? = nil, actor: URL? = nil, object: URL? = nil) {
+    public init(id: String, type: APActivity.ActivityType, summary: String? = nil, inReplyTo: String? = nil, published: Date? = nil, url: URL? = nil, attributedTo: URL? = nil, to: [URL]? = nil, cc: [URL]? = nil, sensitive: Bool? = nil, atomUri: URL? = nil, inReplyToAtomUri: URL? = nil, conversation: String? = nil, content: String? = nil, contentMap: [String : String]? = nil, attachment: [APPost.Attachment]? = nil, tag: [APActivity.Tag]? = nil, replies: APActivity.Replies? = nil, actor: URL? = nil, object: URL? = nil) {
       self.id = id
       self.type = type
       self.summary = summary
@@ -128,8 +128,8 @@ public struct APActivity: APContent, @unchecked Sendable {
       self.atomUri = atomUri
       self.inReplyToAtomUri = inReplyToAtomUri
       self.conversation = conversation
-      self.APContent = APContent
-      self.APContentMap = APContentMap
+      self.content = content
+      self.contentMap = contentMap
       self.attachment = attachment
       self.tag = tag
       self.replies = replies

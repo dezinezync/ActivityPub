@@ -33,17 +33,18 @@ public func fetchActorProfile(from actorURL: URL, using req: APNetworkingRequest
   
   req.logger.info("WebFinger: \(webFingerURI)", metadata: nil, file: #file, function: #function, line: #line)
   
-  let webFingerRes = try await req.client.get(webFingerURI, headers: HTTPHeaders([
+  let webFingerRes = try await req.get(webFingerURI, headers: HTTPHeaders([
     ("Accept", JSON_LD_HEADER)
   ]))
   
-  guard webFingerRes.0.status.code < 299 else {
+  guard webFingerRes.0.status.code < 299,
+        let resData = webFingerRes.1 else {
     throw APAbortError(webFingerRes.0.status)
   }
   
   let decoderToUse = decoder ?? JSONDecoder()
   
-  let webFingerResult = try decoderToUse.decode(APWebFingerProfile.self, from: webFingerRes.1)
+  let webFingerResult = try decoderToUse.decode(APWebFingerProfile.self, from: resData)
   
   guard let profilePath = webFingerResult.links.first(where: { $0.type == "application/activity+json" })?.href else {
     throw APAbortError(.notFound, reason: "The actor profile URL could not be fetched from \(webFingerURI.host!)")
@@ -51,23 +52,24 @@ public func fetchActorProfile(from actorURL: URL, using req: APNetworkingRequest
   
   req.logger.info("Fetching actor profile for \(profilePath)", metadata: nil, file: #file, function: #function, line: #line)
   
-  let res = try await req.client.get(profilePath, headers: HTTPHeaders([
+  let res = try await req.get(profilePath, headers: HTTPHeaders([
     ("Accept", JSON_LD_HEADER)
   ]))
   
-  guard res.0.status.code < 299 else {
+  guard res.0.status.code < 299,
+        let resData = res.1 else {
     throw APAbortError(res.0.status)
   }
   
   let actor: any APPublicActor
   
   do {
-    let profile = try decoderToUse.decode(APActor.self, from: res.1)
+    let profile = try decoderToUse.decode(APActor.self, from: resData)
     actor = profile
   }
   catch is DecodingError {
     // check if it's a mastodon profile
-    let profile = try decoderToUse.decode(APMastodonProfile.self, from: res.1)
+    let profile = try decoderToUse.decode(APMastodonProfile.self, from: resData)
     actor = profile
   }
   catch {

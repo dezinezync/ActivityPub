@@ -96,36 +96,48 @@ keyId="\(actorKeyId)",headers="\(headers.joined(separator: " "))",signature="\(e
     request.logger.info("Notifying: url: \(remote); digest: \(digest); date: \(dateHeader); signature: \(signature);", metadata: nil, file: #file, function: #function, line: #line)
     
     do {
-      let response = try await request.client.post(
+      let headers = HTTPHeaders([
+        ("Host", host),
+        ("Date", dateHeader),
+        ("Digest", "SHA-256=\(digest)"),
+        ("Content-Type", ACTIVITY_JSON_HEADER),
+        ("Signature", signature)
+      ])
+      #if canImport(Vapor)
+      let response = try await request.post(
         remote.absoluteString,
-        headers: HTTPHeaders([
-          ("Host", host),
-          ("Date", dateHeader),
-          ("Digest", "SHA-256=\(digest)"),
-          ("Content-Type", ACTIVITY_JSON_HEADER),
-          ("Signature", signature)
-        ])) { req in
-          #if canImport(Vapor)
-          try req.content?.encode(content, as: .activityJSON)
-          #else
-          try req.content?.encode(content, as: "application/activity+json")
-          #endif
-          req.headers.replaceOrAdd(name: .contentType, value: ACTIVITY_JSON_HEADER)
-        }
+        headers: headers,
+        body: content,
+        contentType: .activityJSON
+      )
+      #else
+      let response = try await request.post(
+        remote.absoluteString,
+        headers: headers,
+        body: content,
+        contentType: "application/activity+json"
+      )
+      #endif
       
       // @TODO: Inspect Response to ensure everything is okay
       switch response.0.status {
       case .accepted...(.imUsed):
         request.logger.info("Notified \(remote); status: \(response.0.status);", metadata: nil, file: #file, function: #function, line: #line)
       default:
+        guard let resData = response.1 else {
+          throw APAbortError(.notAcceptable, reason: "Invalid or no response data from remote ActivityPub server")
+        }
+        
         #if canImport(Vapor)
-        if response.0.content.contentType == .json || response.0.content.contentType == .activityJSON,
-           let jsonObject = try? JSONSerialization.jsonObject(with: response.1) {
+        if response.0.contentType == .json || response.0.contentType == .activityJSON,
+           let jsonObject = try? JSONSerialization.jsonObject(with: resData) {
           request.logger.warning("Failed to notify \(remote); digest \(digest); date: \(dateHeader); signature: \(signature); response: \(jsonObject)", metadata: nil, file: #file, function: #function, line: #line)
         }
         else {
-          let data = response.1
-          request.logger.warning("Failed to notify \(remote); digest \(digest); date: \(dateHeader); signature: \(signature); response: \(String(describing: String(data: data, encoding: .utf8)))", metadata: nil, file: #file, function: #function, line: #line)
+          if let data = response.1 {
+            let string = String(buffer: data)
+            request.logger.warning("Failed to notify \(remote); digest \(digest); date: \(dateHeader); signature: \(signature); response: \(String(describing: string))", metadata: nil, file: #file, function: #function, line: #line)
+          }
         }
         #else
         guard let mimeType = response.0.content.mimeType else {

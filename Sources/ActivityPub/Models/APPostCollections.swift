@@ -63,11 +63,11 @@ public struct APPostComment: APItem, APContent, @unchecked Sendable {
   
   public let sensitive: Bool
   
-  public let APContent: String
+  public let content: String
   
   public let replies: APPost.Replies
   
-  public init(id: URL, type: String = "Note", inReplyTo: URL?, published: Date, url: URL, attributedTo: URL, to: [String], cc: [String], sensitive: Bool, APContent: String, replies: APPost.Replies) {
+  public init(id: URL, type: String = "Note", inReplyTo: URL?, published: Date, url: URL, attributedTo: URL, to: [String], cc: [String], sensitive: Bool, content: String, replies: APPost.Replies) {
     self.id = id
     self.type = type
     self.inReplyTo = inReplyTo
@@ -77,7 +77,7 @@ public struct APPostComment: APItem, APContent, @unchecked Sendable {
     self.to = to
     self.cc = cc
     self.sensitive = sensitive
-    self.APContent = APContent
+    self.content = content
     self.replies = replies
   }
 }

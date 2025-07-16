@@ -30,7 +30,7 @@ public struct APAuthenticator {
     
   }
   
-  public func authenticate(request: APNetworkingRequest) async throws {
+  public func authenticating(request: APNetworkingRequest) async throws {
     guard let signatureHeader = request.headers.first(name: "Signature") else {
       throw APAbortError(.unauthorized, reason: "Signature header missing, required for authenticated requests.")
     }
@@ -125,7 +125,7 @@ public struct APAuthenticator {
   fileprivate func prepareSignedData(from request: APNetworkingRequest, headersList: [String]) -> Data {
     let signingStrings: [String] = headersList.compactMap { header in
       if header == "(request-target)" {
-        return "\(header): \(request.method.rawValue.lowercased()) \(request.url.path)"
+        return "\(header): \(request.method.rawValue.lowercased()) \(request.resourceURL?.path ?? "")"
       }
       
       if let headerValue = request.headers.first(name: header) {

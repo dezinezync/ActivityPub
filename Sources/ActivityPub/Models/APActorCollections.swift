@@ -152,7 +152,7 @@ public struct APPost: APItem, APContent, @unchecked Sendable {
   public var type: String = "Note"
   public let url: URL
   public let attributedTo: URL
-  public let APContent: String
+  public let content: String
   public let published: Date
   public let summary: String
   public let replies: Replies
@@ -186,12 +186,12 @@ public struct APPost: APItem, APContent, @unchecked Sendable {
     }
   }
   
-  public init(id: URL, type: String = "Note", url: URL, attributedTo: URL, APContent: String, published: Date, summary: String, replies: Replies, attachment: [Attachment]) {
+  public init(id: URL, type: String = "Note", url: URL, attributedTo: URL, content: String, published: Date, summary: String, replies: Replies, attachment: [Attachment]) {
     self.id = id
     self.type = type
     self.url = url
     self.attributedTo = attributedTo
-    self.APContent = APContent
+    self.content = content
     self.published = published
     self.summary = summary
     self.replies = replies
