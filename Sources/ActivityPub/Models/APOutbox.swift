@@ -8,8 +8,8 @@
 import Foundation
 
 // MARK: - APOutbox
-/// The outbox stream contains activities the user has published, subject to the ability of the requestor to retrieve the activity (that is, the APContents of the outbox are filtered by the permissions of the person reading it)
-public struct APOutbox: APOrderedCollection, APContent, @unchecked Sendable {
+/// The outbox stream contains activities the user has published, subject to the ability of the requestor to retrieve the activity (that is, the contents of the outbox are filtered by the permissions of the person reading it)
+public struct APOutbox: APOrderedCollection, APContent, Sendable {
   public typealias Item = APPostContainer
   
   public let context: URL = APContextURL
@@ -47,7 +47,7 @@ public struct APOutbox: APOrderedCollection, APContent, @unchecked Sendable {
   }
 }
 
-public struct APPostContainer: APItem, APContent, @unchecked Sendable {
+public struct APPostContainer: APItem, APContent, Sendable {
   public var context: [String] = ["https://www.w3.org/ns/activitystreams"]
   public let id: String
   public var type = "Create"

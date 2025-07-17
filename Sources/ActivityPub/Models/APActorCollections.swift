@@ -8,7 +8,7 @@
 import Foundation
 
 // MARK: - APFollowers
-public struct APFollowers: APOrderedCollection, APContent, @unchecked Sendable {
+public struct APFollowers: APOrderedCollection, APContent, Sendable {
   public typealias Item = APFollower
   
   public let context: URL = APContextURL
@@ -46,7 +46,7 @@ public struct APFollowers: APOrderedCollection, APContent, @unchecked Sendable {
 }
 
 // MARK: - APFollowing
-public struct APFollowing: APOrderedCollection, APContent, @unchecked Sendable {
+public struct APFollowing: APOrderedCollection, APContent, Sendable {
   public typealias Item = APFollower
   
   public let context: URL = APContextURL
@@ -86,7 +86,7 @@ public struct APFollowing: APOrderedCollection, APContent, @unchecked Sendable {
 
 // MARK: - APLiked
 /// Specifically a property of actors. This is a collection of Like activities performed by the actor, added to the collection as a side effect of delivery to the outbox.
-public struct APLiked: APOrderedCollection, APContent, @unchecked Sendable {
+public struct APLiked: APOrderedCollection, APContent, Sendable {
   public typealias Item = APPost
   
   public let context: URL = APContextURL
@@ -124,7 +124,7 @@ public struct APLiked: APOrderedCollection, APContent, @unchecked Sendable {
 }
 
 // MARK: - APFollower
-public struct APFollower: APItem, APContent, @unchecked Sendable {
+public struct APFollower: APItem, APContent, Sendable {
   public let id: URL
   
   public var type = "Person"
@@ -147,7 +147,7 @@ public struct APFollower: APItem, APContent, @unchecked Sendable {
 }
 
 // MARK: - APPost
-public struct APPost: APItem, APContent, @unchecked Sendable {
+public struct APPost: APItem, APContent, Sendable {
   public let id: URL
   public var type: String = "Note"
   public let url: URL
@@ -158,7 +158,7 @@ public struct APPost: APItem, APContent, @unchecked Sendable {
   public let replies: Replies
   public let attachment: [Attachment]
   
-  public struct Attachment: APContent, @unchecked Sendable {
+  public struct Attachment: APContent, Sendable {
     public let type: String
     public let url: URL
     public let mediaType: String
@@ -174,7 +174,7 @@ public struct APPost: APItem, APContent, @unchecked Sendable {
     }
   }
   
-  public struct Replies: APContent, @unchecked Sendable {
+  public struct Replies: APContent, Sendable {
     public let id: URL
     public var type: String = "Collection"
     public let first: APCollectionPage
@@ -199,7 +199,7 @@ public struct APPost: APItem, APContent, @unchecked Sendable {
   }
 }
 
-public struct APCollectionPage: APContent, @unchecked Sendable {
+public struct APCollectionPage: APContent, Sendable {
   public var type: String = "CollectionPage"
   public let next: URL
   public let partOf: URL

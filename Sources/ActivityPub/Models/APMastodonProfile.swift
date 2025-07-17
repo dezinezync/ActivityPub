@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct APMastodonProfile: APPublicActor, APContent, @unchecked Sendable {
+public struct APMastodonProfile: APPublicActor, APContent, Sendable {
   public var preferredUsername: String
   public var endpoints: Endpoints
   public var outbox: String
@@ -33,39 +33,39 @@ public struct APMastodonProfile: APPublicActor, APContent, @unchecked Sendable {
   public var attachment: [Attachment]
   public var inbox: String
   
-  public struct Endpoints: APContent, @unchecked Sendable {
+  public struct Endpoints: APContent, Sendable {
     public var sharedInbox: String
   }
   
-  public struct Media: APContent, @unchecked Sendable {
+  public struct Media: APContent, Sendable {
     public var type: String
     public var mediaType: String
     public var url: String
   }
   
-  public struct PublicKey: ActorPublicKey, APContent, @unchecked Sendable {
+  public struct PublicKey: ActorPublicKey, APContent, Sendable {
     public var id: String
     public var owner: String
     public var publicKeyPem: String
   }
   
-  public struct Attachment: APContent, @unchecked Sendable {
+  public struct Attachment: APContent, Sendable {
     public var type: String
     public var name: String
     public var value: String
   }
   
-  public struct TypeIdPair: APContent, @unchecked Sendable {
+  public struct TypeIdPair: APContent, Sendable {
     public var type: String
     public var id: String
   }
   
-  public struct FocalPoint: APContent, @unchecked Sendable {
+  public struct FocalPoint: APContent, Sendable {
     public var container: String
     public var id: String
   }
   
-  public struct Tag: APContent, @unchecked Sendable {
+  public struct Tag: APContent, Sendable {
     public let id: String
     public let type: String
     public let name: String?

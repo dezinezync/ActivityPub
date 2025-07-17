@@ -22,8 +22,8 @@ public protocol APPublicActor {
 }
 
 // MARK: - APActor
-public struct APActor: APPublicActor, APContent, @unchecked Sendable {
-  public enum ActorType: String, Codable {
+public struct APActor: APPublicActor, APContent, Sendable {
+  public enum ActorType: String, Codable, Sendable {
     case person = "Person"
     case team = "Team"
   }
@@ -68,7 +68,7 @@ public struct APActor: APPublicActor, APContent, @unchecked Sendable {
     case devices
   }
   
-  public struct APPublicKey: ActorPublicKey, APContent {
+  public struct APPublicKey: ActorPublicKey, APContent, Sendable {
     public let id: String
     public let owner: String
     public let publicKeyPem: String
@@ -80,7 +80,7 @@ public struct APActor: APPublicActor, APContent, @unchecked Sendable {
     }
   }
   
-  public struct Icon: APContent {
+  public struct Icon: APContent, Sendable {
     public let type: String
     public let mediaType: String
     public let url: URL
@@ -98,7 +98,7 @@ public struct APActor: APPublicActor, APContent, @unchecked Sendable {
     }
   }
   
-  public struct APActorAttachment: APContent {
+  public struct APActorAttachment: APContent, Sendable {
     public var type: String = "PropertyValue"
     public let name: String
     public let value: String
@@ -148,7 +148,7 @@ public struct APActorContexts: Codable {
     self.items = items
   }
   
-  public enum ContextItem: Codable {
+  public enum ContextItem: Codable, Sendable {
     case string(String)
     case complex(ComplexContext)
     
@@ -173,7 +173,7 @@ public struct APActorContexts: Codable {
   
   // @TODO: The context uses a static `incise:` prefix
   // Need to figure out how this can be made dynamic 
-  public struct ComplexContext: Codable {
+  public struct ComplexContext: Codable, Sendable {
     public var manuallyApprovesFollowers: String = "as:manuallyApprovesFollowers"
     public var incise: String = "http://incise.app/ns#"
     public var featured: IDType = IDType(id: "incise:featured")
@@ -206,7 +206,7 @@ public struct APActorContexts: Codable {
     public var followingCount: String = "incise:followingCount"
     public var group: String = "incise:group"
     
-    public struct IDType: Codable {
+    public struct IDType: Codable, Sendable {
       public var id: String
       public var type: String = "@id"
       
@@ -221,7 +221,7 @@ public struct APActorContexts: Codable {
       }
     }
     
-    public struct IDContainer: Codable {
+    public struct IDContainer: Codable, Sendable {
       public var container: String = "@list"
       public var id: String
       

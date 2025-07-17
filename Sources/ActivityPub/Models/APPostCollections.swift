@@ -8,7 +8,7 @@
 import Foundation
 
 // MARK: - APPostComments
-public struct APPostComments: APOrderedCollection, APContent, @unchecked Sendable {
+public struct APPostComments: APOrderedCollection, APContent, Sendable {
   public typealias Item = APPostComment
   
   public var context: URL = APContextURL
@@ -43,7 +43,7 @@ public struct APPostComments: APOrderedCollection, APContent, @unchecked Sendabl
 }
 
 // MARK: - APPostComment
-public struct APPostComment: APItem, APContent, @unchecked Sendable {
+public struct APPostComment: APItem, APContent, Sendable {
   public let id: URL
   
   public var type: String = "Note"
