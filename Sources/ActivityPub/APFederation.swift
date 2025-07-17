@@ -9,6 +9,9 @@ import Foundation
 import _CryptoExtras
 import NIOCore
 import NIOHTTP1
+#if canImport(Network)
+import Network
+#endif
 
 open class APFederationHost {
   public static let encoder: JSONEncoder = {
@@ -38,14 +41,31 @@ open class APFederationHost {
     
     for remote in remotes {
       guard let host = remote.host() else {
-        req.logger.warning("No valid host for remote in \(String.init(describing: object)), exiting", metadata: nil, file: #file, function: #function, line: #line)
+        req.logger.warning("No valid host for remote in \(String.init(describing: object)), exiting")
         continue
       }
+      
+      #if canImport(Network)
+      // Disallow multi-cast and loopback addresses on the local system.
+      //
+      // This may sometimes cause an infinite recursion on misconfigured systems.
+      if let ipv4Address = IPv4Address(host),
+         ipv4Address.isLoopback || ipv4Address.isMulticast {
+        req.logger.warning("Loopback/Multicast address for remote in \(String.init(describing: object)), exiting")
+        continue
+      }
+      
+      if let ipv6Address = IPv6Address(host),
+         ipv6Address.isLoopback || ipv6Address.isMulticast {
+        req.logger.warning("Loopback/Multicast address for remote in \(String.init(describing: object)), exiting")
+        continue
+      }
+      #endif
       
       let path = remote.path()
       
       guard !path.isEmpty else {
-        req.logger.warning("No valid path for remote in \(String.init(describing: object)), exiting", metadata: nil, file: #file, function: #function, line: #line)
+        req.logger.warning("No valid path for remote in \(String.init(describing: object)), exiting")
         continue
       }
       
@@ -55,7 +75,7 @@ open class APFederationHost {
         continue
       }
       
-      req.logger.info("stringToSign: \(stringToSign); base64: \(stringToSignData.base64EncodedString())", metadata: nil, file: #file, function: #function, line: #line)
+      req.logger.info("stringToSign: \(stringToSign); base64: \(stringToSignData.base64EncodedString())")
       
       // 3. Sign the string using our user's private key
       //
@@ -93,7 +113,7 @@ keyId="\(actorKeyId)",headers="\(headers.joined(separator: " "))",signature="\(e
       return
     }
     
-    request.logger.info("Notifying: url: \(remote); digest: \(digest); date: \(dateHeader); signature: \(signature);", metadata: nil, file: #file, function: #function, line: #line)
+    request.logger.info("Notifying: url: \(remote); digest: \(digest); date: \(dateHeader); signature: \(signature);")
     
     do {
       let headers = HTTPHeaders([
@@ -122,7 +142,7 @@ keyId="\(actorKeyId)",headers="\(headers.joined(separator: " "))",signature="\(e
       // @TODO: Inspect Response to ensure everything is okay
       switch response.0.status {
       case .accepted...(.imUsed):
-        request.logger.info("Notified \(remote); status: \(response.0.status);", metadata: nil, file: #file, function: #function, line: #line)
+        request.logger.info("Notified \(remote); status: \(response.0.status);")
       default:
         guard let resData = response.1 else {
           throw APAbortError(.notAcceptable, reason: "Invalid or no response data from remote ActivityPub server")
@@ -131,27 +151,27 @@ keyId="\(actorKeyId)",headers="\(headers.joined(separator: " "))",signature="\(e
         #if canImport(Vapor)
         if response.0.contentType == .json || response.0.contentType == .activityJSON,
            let jsonObject = try? JSONSerialization.jsonObject(with: resData) {
-          request.logger.warning("Failed to notify \(remote); digest \(digest); date: \(dateHeader); signature: \(signature); response: \(jsonObject)", metadata: nil, file: #file, function: #function, line: #line)
+          request.logger.warning("Failed to notify \(remote); digest \(digest); date: \(dateHeader); signature: \(signature); response: \(jsonObject)")
         }
         else {
           if let data = response.1 {
             let string = String(buffer: data)
-            request.logger.warning("Failed to notify \(remote); digest \(digest); date: \(dateHeader); signature: \(signature); response: \(String(describing: string))", metadata: nil, file: #file, function: #function, line: #line)
+            request.logger.warning("Failed to notify \(remote); digest \(digest); date: \(dateHeader); signature: \(signature); response: \(String(describing: string))")
           }
         }
         #else
         guard let mimeType = response.0.content.mimeType else {
-          request.logger.warning("No mimetype, ignoring", metadata: nil, file: #file, function: #function, line: #line)
+          request.logger.warning("No mimetype, ignoring")
           return
         }
         
         if mimeType.contains("json") || mimeType.contains("activity+json"),
            let jsonObject = try? JSONSerialization.jsonObject(with: response.1) {
-          request.logger.warning("Failed to notify \(remote); digest \(digest); date: \(dateHeader); signature: \(signature); response: \(jsonObject)", metadata: nil, file: #file, function: #function, line: #line)
+          request.logger.warning("Failed to notify \(remote); digest \(digest); date: \(dateHeader); signature: \(signature); response: \(jsonObject)")
         }
         else {
           let data = response.1
-          request.logger.warning("Failed to notify \(remote); digest \(digest); date: \(dateHeader); signature: \(signature); response: \(String(describing: String(data: data, encoding: .utf8)))", metadata: nil, file: #file, function: #function, line: #line)
+          request.logger.warning("Failed to notify \(remote); digest \(digest); date: \(dateHeader); signature: \(signature); response: \(String(describing: String(data: data, encoding: .utf8)))")
         }
         #endif
       }
@@ -159,7 +179,7 @@ keyId="\(actorKeyId)",headers="\(headers.joined(separator: " "))",signature="\(e
     catch {
       // @TODO: Observe Error
       // Errors like host unavailable, timeout, SSL errors should be queued for retrying
-      request.logger.error("Error notifying \(remote); digest \(digest); date: \(dateHeader); signature: \(signature); error: \(error.localizedDescription); \((error as NSError).code)", metadata: nil, file: #file, function: #function, line: #line)
+      request.logger.error("Error notifying \(remote); digest \(digest); date: \(dateHeader); signature: \(signature); error: \(error.localizedDescription); \((error as NSError).code)")
     }
   }
 }

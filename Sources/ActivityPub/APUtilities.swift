@@ -8,32 +8,86 @@
 import Foundation
 import NIOHTTP1
 import NIOCore
+#if canImport(Network)
+import Network
+#endif
 
 /// Fetches the actor profile given the actor URL.
 ///
-/// This is a two  step process:
-/// 1. First, the webfinger URL is queried on the domain, to fetch the actual profile of the user.
+/// This is a three  step process:
+/// 1. First, the host-meta URL is queried on the host, to fetch the webfinger URL of the host.
+/// 1. Then, the webfinger URL is queried on the host, to fetch the actual profile of the user.
 /// 2. Then based on the response in 1, the activity stream URL is fetched.
 /// - Parameters:
 ///   - actorURL: the URL to the actor
-///   - client: the `Request.Client` instance to use for making external requests.
+///   - client: an instance conforming to `APNetworkingRequest` to use for making external requests.
 ///   - decoder: the decoder to use for the response, uses `JSONDecoder` by default.
 /// - Returns: instance of an `APPublicActor` which has `instance.publicKey`
 public func fetchActorProfile(from actorURL: URL, using req: APNetworkingRequest, decoder: JSONDecoder? = nil) async throws -> (any APPublicActor) {
-  // @TODO: Must check the actorURL's server with the resource path for the webfinger request instead of assuming it's at /.well-known/webfinger
-  #if DEBUG
-  let webFingerURI = URL(string:"\(actorURL.scheme!)://\(actorURL.host!)\(actorURL.host == "localhost" ? ":8080" : "")/.well-known/webfinger?resource=acct:\(actorURL.path.split(separator: "/").last!)@\(actorURL.host!)\(actorURL.host == "localhost" ? ":8080" : "")")!
-  #else
-  if actorURL.host?.contains("localhost") == true ||
-      actorURL.host?.contains("127.0.0.1") == true {
-    throw Abort(.notImplemented, reason: "Cannot use loopback address, please check the actor URL")
+  // @TODO: Should provide protocol parameter to enable a caching mechanism for looking up previously resolved webfinger URIs
+  guard let hostScheme = actorURL.scheme,
+        let hostHost = actorURL.host else {
+    throw APAbortError(.badRequest, reason: "Invalid actor URL")
   }
-  let webFingerURI = URL(string: "\(actorURL.scheme!)://\(actorURL.host!)\(actorURL.host == "localhost" ? ":8080" : "")/.well-known/webfinger?resource=acct:\(actorURL.path.split(separator: "/").last!)@\(actorURL.host!)")!
+  
+  let hostPort = actorURL.port ?? 443
+  
+  guard let hostMetaURL = hostPort == 80 || hostPort == 443
+          ? URL(string: "\(hostScheme)://\(hostHost)/.well-known/host-meta")
+          : URL(string: "\(hostScheme)://\(hostHost):\(hostPort)/.well-known/host-meta") else {
+    throw APAbortError(.internalServerError, reason: "Failed to form host meta URL for actor URL \(actorURL)")
+  }
+  
+  let hostMetaRes = try await req.get(hostMetaURL, headers: HTTPHeaders([]))
+  
+  guard hostMetaRes.0.status.code <= 299,
+        let hostMetaBody = hostMetaRes.1 else {
+    throw APAbortError(.badRequest, reason: "Received invalid response from host for actor URL \(actorURL) when fetching host-meta information.")
+  }
+  
+  // Since we expect a very strict format here, we forego implementing
+  // an XMLParser and use a simple regular expression to extract the URL.
+  let hostMetaString = String(buffer: hostMetaBody)
+  
+  guard !hostMetaString.isEmpty,
+        let expression = try? NSRegularExpression(pattern: #"\<Link\s.+template\=\"(.+\?resource=)\{uri\}\".+"#),
+        let match = expression.firstMatch(in: hostMetaString, range: NSRange(location: 0, length: hostMetaString.count)),
+        match.numberOfRanges > 1 else {
+    throw APAbortError(.internalServerError, reason: "Failed to inspect host-meta response for actor URL \(actorURL)")
+  }
+  
+  let matchedRange = match.range(at: 1)
+  
+  let startIndex = hostMetaString.index(hostMetaString.startIndex, offsetBy: matchedRange.location)
+  let endIndex = hostMetaString.index(hostMetaString.startIndex, offsetBy: matchedRange.location + matchedRange.length)
+  
+  let hostMetaURI = hostMetaString[startIndex..<endIndex]
+  
+  // Strip the prefixed "@" if one exists else some server implementations may respond with a 404 response
+  let actorName = actorURL.path.split(separator: "/").last!.replacingOccurrences(of: "@", with: "")
+  
+  guard let webFingerURL = URL(string: "\(hostMetaURI)acct:\(actorName)@\(actorURL.host!)") else {
+    throw APAbortError(.internalServerError, reason: "Failed to form webfinger URL for base: \(hostMetaURI) and actor URL \(actorURL)")
+  }
+  
+  #if canImport(Network)
+  // Disallow multi-cast and loopback addresses on the local system.
+  //
+  // This may sometimes cause an infinite recursion on misconfigured systems.
+  if let ipv4Address = IPv4Address(webFingerURL.host!),
+     ipv4Address.isLoopback || ipv4Address.isMulticast {
+    throw APAbortError(.internalServerError, reason: "Loopback/Multicast address for remote in \(webFingerURL), exiting")
+  }
+
+  if let ipv6Address = IPv6Address(webFingerURL.host!),
+     ipv6Address.isLoopback || ipv6Address.isMulticast {
+    throw APAbortError(.internalServerError, reason: "Loopback/Multicast address for remote in \(webFingerURL), exiting")
+  }
   #endif
   
-  req.logger.info("WebFinger: \(webFingerURI)", metadata: nil, file: #file, function: #function, line: #line)
+  req.logger.info("WebFinger: \(webFingerURL)")
   
-  let webFingerRes = try await req.get(webFingerURI, headers: HTTPHeaders([
+  let webFingerRes = try await req.get(webFingerURL, headers: HTTPHeaders([
     ("Accept", JSON_LD_HEADER)
   ]))
   
@@ -47,10 +101,10 @@ public func fetchActorProfile(from actorURL: URL, using req: APNetworkingRequest
   let webFingerResult = try decoderToUse.decode(APWebFingerProfile.self, from: resData)
   
   guard let profilePath = webFingerResult.links.first(where: { $0.type == "application/activity+json" })?.href else {
-    throw APAbortError(.notFound, reason: "The actor profile URL could not be fetched from \(webFingerURI.host!)")
+    throw APAbortError(.notFound, reason: "The actor profile URL could not be fetched from \(hostHost)")
   }
   
-  req.logger.info("Fetching actor profile for \(profilePath)", metadata: nil, file: #file, function: #function, line: #line)
+  req.logger.info("Fetching actor profile for \(profilePath)")
   
   let res = try await req.get(profilePath, headers: HTTPHeaders([
     ("Accept", JSON_LD_HEADER)
