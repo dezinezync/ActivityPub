@@ -15,23 +15,6 @@ public protocol APActivityResponse: APContent {
   var object: Either<ActivityObject, URL> { get }
 }
 
-/*
-// @TODO: Move to implementation
-extension APActivityResponse {
-  public func encodeResponse(for request: Request) async throws -> Response {
-    let encoder = try APContentConfiguration.global.requireEncoder(for: .activityJSON)
-    var headers = HTTPHeaders()
-    var byteBuffer = ByteBuffer()
-    
-    try encoder.encode(self, to: &byteBuffer, headers: &headers)
-
-    headers.remove(name: .APContentType)
-    headers.add(name: .APContentType, value: "application/activity+json")
-    return Response(status: .ok, headers: headers, body: Response.Body(buffer: byteBuffer))
-  }
-}
-*/
-
 // Nested structure for the "object" part of the JSON.
 public struct ActivityObject: APContent, Sendable {
   let id: String
