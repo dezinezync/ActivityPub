@@ -46,7 +46,7 @@ public struct ActivityObject: Content, Sendable {
 }
 
 // MARK: - APActivity
-public struct APActivity: Content, @unchecked Sendable {
+public struct APActivity: Content, Sendable {
   public enum ActivityType: String, Codable, Sendable {
     case comment = "Comment"
     case note = "Note"
@@ -89,7 +89,7 @@ public struct APActivity: Content, @unchecked Sendable {
     case signature
   }
   
-  public struct Object: Content, @unchecked Sendable {
+  public struct Object: Content, Sendable {
     public var id: String
     public var type: ActivityType
     public var summary: String?
@@ -136,7 +136,7 @@ public struct APActivity: Content, @unchecked Sendable {
     }
   }
   
-  public struct Tag: Content, @unchecked Sendable {
+  public struct Tag: Content, Sendable {
     public var type: String
     public var href: URL
     public var name: String
@@ -148,7 +148,7 @@ public struct APActivity: Content, @unchecked Sendable {
     }
   }
   
-  public struct Replies: Content, @unchecked Sendable {
+  public struct Replies: Content, Sendable {
     public var id: String
     public var type: String
     public var first: First
@@ -160,7 +160,7 @@ public struct APActivity: Content, @unchecked Sendable {
     }
   }
   
-  public struct First: Content {
+  public struct First: Content, Sendable {
     public var type: String
     public var next: URL
     public var partOf: URL
@@ -174,7 +174,7 @@ public struct APActivity: Content, @unchecked Sendable {
     }
   }
   
-  public struct Signature: Content, @unchecked Sendable {
+  public struct Signature: Content, Sendable {
     public var type: String
     public var creator: URL
     public var created: Date
@@ -205,17 +205,17 @@ public struct APActivity: Content, @unchecked Sendable {
 }
 
 // MARK: - Tombstone
-public struct Tombstone: Content, @unchecked Sendable {
+public struct Tombstone: Content, Sendable {
   public let id: String
   public let type: APActivity.ActivityType
   public let atomUri: String?
 }
 
 // MARK: - APActivityContexts
-public struct APActivityContexts: Codable, @unchecked Sendable {
+public struct APActivityContexts: Codable, Sendable {
   public var items: [ContextItem]
   
-  public enum ContextItem: Codable {
+  public enum ContextItem: Codable, Sendable {
     case string(String)
     case complex(ComplexContext)
     
@@ -238,7 +238,7 @@ public struct APActivityContexts: Codable, @unchecked Sendable {
     }
   }
 
-  public struct ComplexContext: Codable, @unchecked Sendable {
+  public struct ComplexContext: Codable, Sendable {
     public var ostatus: String = "http://ostatus.org#"
     public var atomUri: String? = "ostatus:atomUri"
     public var inReplyToAtomUri: String? = "ostatus:inReplyToAtomUri"
