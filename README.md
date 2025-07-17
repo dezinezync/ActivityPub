@@ -147,7 +147,8 @@ There is an effort to convert this package into a core ActivityPub implementatio
 This removes the dependency on Vapor. A compatability file should be introduced on your Vapor based projects with something similar to the following:
 <details>
 <summary>ActivityPub+Extensions.swift</summary>
-<pre><code>
+
+```swift
 import Foundation
 import ActivityPub
 import Vapor
@@ -256,7 +257,7 @@ extension Request: @retroactive APNetworkingRequest {
     URL(string: self.url.string)
   }
 }
-</code></pre>
+```
 </details> 
 
 #### Contributions
