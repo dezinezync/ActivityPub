@@ -5,15 +5,15 @@
 //  Created by Nikhil Nigade on 30/10/24.
 //
 
-import Vapor
+import Foundation
 
-public struct APWebFingerProfile: Content, Sendable {
+public struct APWebFingerProfile: APContent, Sendable {
   public var subject: String
   public var aliases: [String]
   public var links: [Link]
   
   // Structure to represent each link in the "links" array of the JSON.
-  public struct Link: Content, Sendable {
+  public struct Link: APContent, Sendable {
     public var rel: String
     public var type: String?
     public var href: String?

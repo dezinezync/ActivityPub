@@ -6,6 +6,8 @@
 //
 
 import Foundation
+
+#if canImport(Vapor)
 import Vapor
 
 public extension HTTPMediaType {
@@ -21,3 +23,21 @@ public extension HTTPMediaType {
     "charset": "utf-8"
   ])
 }
+#else
+public enum APHTTPMediaType: CustomStringConvertible {
+  case activityStreams
+  case activityStreamsAlt
+  case activityJSON
+  
+  public var description: String {
+    switch self {
+    case .activityStreams:
+      return "application/ld+json"
+    case .activityStreamsAlt:
+      return "application/jrd+json"
+    case .activityJSON:
+      return "application/activity+json"
+    }
+  }
+}
+#endif

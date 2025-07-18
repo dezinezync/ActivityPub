@@ -6,9 +6,8 @@
 //
 
 import Foundation
-import Vapor
 
-public protocol APActivityResponse: Content, AsyncResponseEncodable {
+public protocol APActivityResponse: APContent {
   var context: [String] { get }
   var id: String { get }
   var type: APActivity.ActivityType { get }
@@ -16,22 +15,8 @@ public protocol APActivityResponse: Content, AsyncResponseEncodable {
   var object: Either<ActivityObject, URL> { get }
 }
 
-extension APActivityResponse {
-  public func encodeResponse(for request: Request) async throws -> Response {
-    let encoder = try ContentConfiguration.global.requireEncoder(for: .activityJSON)
-    var headers = HTTPHeaders()
-    var byteBuffer = ByteBuffer()
-    
-    try encoder.encode(self, to: &byteBuffer, headers: &headers)
-
-    headers.remove(name: .contentType)
-    headers.add(name: .contentType, value: "application/activity+json")
-    return Response(status: .ok, headers: headers, body: Response.Body(buffer: byteBuffer))
-  }
-}
-
 // Nested structure for the "object" part of the JSON.
-public struct ActivityObject: Content, Sendable {
+public struct ActivityObject: APContent, Sendable {
   let id: String
   let type: APActivity.ActivityType
   let actor: String
@@ -46,7 +31,7 @@ public struct ActivityObject: Content, Sendable {
 }
 
 // MARK: - APActivity
-public struct APActivity: Content, Sendable {
+public struct APActivity: APContent, Sendable {
   public enum ActivityType: String, Codable, Sendable {
     case comment = "Comment"
     case note = "Note"
@@ -89,7 +74,7 @@ public struct APActivity: Content, Sendable {
     case signature
   }
   
-  public struct Object: Content, Sendable {
+  public struct Object: APContent, Sendable {
     public var id: String
     public var type: ActivityType
     public var summary: String?
@@ -136,7 +121,7 @@ public struct APActivity: Content, Sendable {
     }
   }
   
-  public struct Tag: Content, Sendable {
+  public struct Tag: APContent, Sendable {
     public var type: String
     public var href: URL
     public var name: String
@@ -148,7 +133,7 @@ public struct APActivity: Content, Sendable {
     }
   }
   
-  public struct Replies: Content, Sendable {
+  public struct Replies: APContent, Sendable {
     public var id: String
     public var type: String
     public var first: First
@@ -160,7 +145,7 @@ public struct APActivity: Content, Sendable {
     }
   }
   
-  public struct First: Content, Sendable {
+  public struct First: APContent, Sendable {
     public var type: String
     public var next: URL
     public var partOf: URL
@@ -174,7 +159,7 @@ public struct APActivity: Content, Sendable {
     }
   }
   
-  public struct Signature: Content, Sendable {
+  public struct Signature: APContent, Sendable {
     public var type: String
     public var creator: URL
     public var created: Date
@@ -205,7 +190,7 @@ public struct APActivity: Content, Sendable {
 }
 
 // MARK: - Tombstone
-public struct Tombstone: Content, Sendable {
+public struct Tombstone: APContent, Sendable {
   public let id: String
   public let type: APActivity.ActivityType
   public let atomUri: String?

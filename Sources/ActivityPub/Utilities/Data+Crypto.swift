@@ -5,7 +5,8 @@
 //  Created by Nikhil Nigade on 30/10/24.
 //
 
-import Vapor
+import Foundation
+import Crypto
 import _CryptoExtras
 
 public extension Data {

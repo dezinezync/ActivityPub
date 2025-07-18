@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import Vapor
 
 public let APContextURL = URL(string: "https://www.w3.org/ns/activitystreams")!
 
@@ -23,7 +22,7 @@ public protocol APPublicActor {
 }
 
 // MARK: - APActor
-public struct APActor: APPublicActor, Content, Sendable {
+public struct APActor: APPublicActor, APContent, Sendable {
   public enum ActorType: String, Codable, Sendable {
     case person = "Person"
     case team = "Team"
@@ -69,7 +68,7 @@ public struct APActor: APPublicActor, Content, Sendable {
     case devices
   }
   
-  public struct APPublicKey: ActorPublicKey, Content, Sendable {
+  public struct APPublicKey: ActorPublicKey, APContent, Sendable {
     public let id: String
     public let owner: String
     public let publicKeyPem: String
@@ -81,7 +80,7 @@ public struct APActor: APPublicActor, Content, Sendable {
     }
   }
   
-  public struct Icon: Content, Sendable {
+  public struct Icon: APContent, Sendable {
     public let type: String
     public let mediaType: String
     public let url: URL
@@ -99,7 +98,7 @@ public struct APActor: APPublicActor, Content, Sendable {
     }
   }
   
-  public struct APActorAttachment: Content, Sendable {
+  public struct APActorAttachment: APContent, Sendable {
     public var type: String = "PropertyValue"
     public let name: String
     public let value: String
