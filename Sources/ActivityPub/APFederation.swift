@@ -160,18 +160,14 @@ keyId="\(actorKeyId)",headers="\(headers.joined(separator: " "))",signature="\(e
           }
         }
         #else
-        guard let mimeType = response.0.content.mimeType else {
-          request.logger.warning("No mimetype, ignoring")
-          return
-        }
+        let mimeType = response.0.contentType
         
-        if mimeType.contains("json") || mimeType.contains("activity+json"),
-           let jsonObject = try? JSONSerialization.jsonObject(with: response.1) {
+        if mimeType == .json || mimeType.subType.contains("activity+json"),
+           let jsonObject = try? JSONSerialization.jsonObject(with: resData) {
           request.logger.warning("Failed to notify \(remote); digest \(digest); date: \(dateHeader); signature: \(signature); response: \(jsonObject)")
         }
         else {
-          let data = response.1
-          request.logger.warning("Failed to notify \(remote); digest \(digest); date: \(dateHeader); signature: \(signature); response: \(String(describing: String(data: data, encoding: .utf8)))")
+          request.logger.warning("Failed to notify \(remote); digest \(digest); date: \(dateHeader); signature: \(signature); response: \(String(describing: String(buffer: resData)))")
         }
         #endif
       }

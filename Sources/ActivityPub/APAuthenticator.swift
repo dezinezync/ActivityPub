@@ -96,7 +96,7 @@ public struct APAuthenticator {
       throw APAbortError(.unauthorized, reason: "Signature mismatch, please verify the signature provided in the headers.")
     }
     
-    request.logger.info("Validated signature for \(actorURLPath)", metadata: nil, file: #file, function: #function, line: #line)
+    request.logger.info("Validated signature for \(actorURLPath)")
   }
   
   /// Get the public key for the provided actor.

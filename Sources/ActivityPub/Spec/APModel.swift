@@ -11,5 +11,5 @@ import Foundation
 import Vapor
 public typealias APContent = Content
 #else
-public typealias APAPContent = Codable
+public typealias APContent = Codable
 #endif

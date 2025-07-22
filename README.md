@@ -218,7 +218,7 @@ extension Request: @retroactive APNetworkingRequest {
       uri = URI(string: url.absoluteString)
     }
     else {
-      throw Abort(.internalServerError, reason: "Failed to form URI during GET request in protocol conformance from type: \(url.self)")
+      throw Abort(.internalServerError, reason: "Failed to form URI during POST request in protocol conformance from type: \(url.self)")
     }
     
     let res = try await client.post(uri, headers: headers, beforeSend: { req in
