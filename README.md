@@ -138,7 +138,127 @@ A few key routes your server should implement so other servers in the network ca
 </XRD>
 ```
 
-- `/shared/inbox`: A shared inbox which other servers can use to notify of activity updates (including edits, and deletions). 
+- `/shared/inbox`: A shared inbox which other servers can use to notify of activity updates (including edits, and deletions).
+
+#### Core ActivityPub
+
+There is an effort to convert this package into a core ActivityPub implementation such that it can be used for all S2S and C2S Swift based implmentations agnostic of the networking provider/layer. 
+
+This removes the dependency on Vapor. A compatability file should be introduced on your Vapor based projects with something similar to the following:
+<details>
+<summary>ActivityPub+Extensions.swift</summary>
+
+```swift
+import Foundation
+import ActivityPub
+import Vapor
+
+// MARK: - Response Encoding
+protocol APResponseEncodable: AsyncResponseEncodable where Self: Content {
+  
+}
+
+extension APResponseEncodable {
+  public func encodeResponse(for request: Request) async throws -> Response {
+    let encoder = try ContentConfiguration.global.requireEncoder(for: .activityJSON)
+    var headers = HTTPHeaders()
+    var byteBuffer = ByteBuffer()
+    
+    try encoder.encode(self, to: &byteBuffer, headers: &headers)
+
+    headers.remove(name: .contentType)
+    headers.add(name: .contentType, value: "application/activity+json")
+    return Response(status: .ok, headers: headers, body: Response.Body(buffer: byteBuffer))
+  }
+}
+
+// MARK: - Client Response
+
+extension ClientResponse: @retroactive APNetworkingResponse {
+ public var contentType: HTTPMediaType {
+   self.content.contentType ?? .any
+  }
+}
+
+// MARK: - Request
+
+extension Request: @retroactive APNetworkingRequest {
+  // MARK: Network Requests
+  public func get(_ url: any CustomStringConvertible, headers: NIOHTTP1.HTTPHeaders) async throws -> (any ActivityPub.APNetworkingResponse, ByteBuffer?) {
+    let uri: URI
+    
+    if let url = url as? URI {
+      uri = url
+    }
+    else if let url = url as? String {
+      uri = URI(string: url)
+    }
+    else if let url = url as? URL {
+      uri = URI(string: url.absoluteString)
+    }
+    else {
+      throw Abort(.internalServerError, reason: "Failed to form URI during GET request in protocol conformance from type: \(url.self)")
+    }
+    
+    let res = try await client.get(uri, headers: headers)
+    
+    return (res, res.body)
+  }
+  
+  public func post<C>(_ url: any CustomStringConvertible, headers: HTTPHeaders, body: C, contentType: HTTPMediaType) async throws -> (any APNetworkingResponse, ByteBuffer?) where C : Content {
+    let uri: URI
+    
+    if let url = url as? URI {
+      uri = url
+    }
+    else if let url = url as? String {
+      uri = URI(string: url)
+    }
+    else if let url = url as? URL {
+      uri = URI(string: url.absoluteString)
+    }
+    else {
+      throw Abort(.internalServerError, reason: "Failed to form URI during POST request in protocol conformance from type: \(url.self)")
+    }
+    
+    let res = try await client.post(uri, headers: headers, beforeSend: { req in
+      try req.content.encode(body, as: contentType)
+    })
+    
+    return (res, res.body)
+  }
+  
+  // MARK: Encoding
+  public var contentType: HTTPMediaType? {
+    self.content.contentType
+  }
+  
+  public func encode<C>(_ content: C, as contentType: HTTPMediaType) throws where C : Content {
+    try self.content.encode(content, as: contentType)
+  }
+  
+  // MARK: Attributes
+  public var uri: any CustomStringConvertible {
+    get {
+      self.url
+    }
+    set(newValue) {
+      if let newValue = newValue as? URI {
+        self.url = newValue
+      }
+      else if let newValue = newValue as? String {
+        self.url = URI(string: newValue)
+      }
+      else { }
+    }
+  }
+  
+  public var resourceURL: URL? {
+    URL(string: self.url.string)
+  }
+}
+```
+</details> 
 
 #### Contributions
 

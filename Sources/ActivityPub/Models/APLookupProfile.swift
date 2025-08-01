@@ -6,10 +6,9 @@
 //
 
 import Foundation
-import Vapor
 
 /// Represents a user account from a Mastodon-compatible API
-public struct APLookupProfile: Content, Sendable {
+public struct APLookupProfile: APContent, Sendable {
   /// The unique identifier of the account
   public let id: String
   

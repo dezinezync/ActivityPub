@@ -5,8 +5,13 @@
 //  Created by Nikhil Nigade on 30/10/24.
 //
 
-import Vapor
+import Foundation
 import _CryptoExtras
+import NIOCore
+import NIOHTTP1
+#if canImport(Network)
+import Network
+#endif
 
 open class APFederationHost {
   public static let encoder: JSONEncoder = {
@@ -18,14 +23,14 @@ open class APFederationHost {
     return encoder
   }()
   
-  open func federate(object: any APActivityResponse, to remotes: [URL], actorKeyId: String, actorPrivateKey: String, _ req: Request) async throws {
+  open func federate(object: any APActivityResponse, to remotes: [URL], actorKeyId: String, actorPrivateKey: String, _ req: APNetworkingRequest) async throws {
     let encodedObject = try Self.encoder.encode(object)
     
     let privateKey = try _RSA.Signing.PrivateKey(pemRepresentation: actorPrivateKey)
     
     // 1. Generate the content hash using the private key of the user who will be notifying this
     guard let encodedDigest = encodedObject.sha256Data()?.base64EncodedString() else {
-      throw Abort(.internalServerError, reason: "Failed to form base64 encoded representation of the object.")
+      throw APAbortError(.internalServerError, reason: "Failed to form base64 encoded representation of the object.")
     }
     
     // 2. Prepare the string to sign
@@ -39,6 +44,23 @@ open class APFederationHost {
         req.logger.warning("No valid host for remote in \(String.init(describing: object)), exiting")
         continue
       }
+      
+      #if canImport(Network)
+      // Disallow multi-cast and loopback addresses on the local system.
+      //
+      // This may sometimes cause an infinite recursion on misconfigured systems.
+      if let ipv4Address = IPv4Address(host),
+         ipv4Address.isLoopback || ipv4Address.isMulticast {
+        req.logger.warning("Loopback/Multicast address for remote in \(String.init(describing: object)), exiting")
+        continue
+      }
+      
+      if let ipv6Address = IPv6Address(host),
+         ipv6Address.isLoopback || ipv6Address.isMulticast {
+        req.logger.warning("Loopback/Multicast address for remote in \(String.init(describing: object)), exiting")
+        continue
+      }
+      #endif
       
       let path = remote.path()
       
@@ -82,7 +104,7 @@ keyId="\(actorKeyId)",headers="\(headers.joined(separator: " "))",signature="\(e
     }
   }
   
-  open func notify(remote: URL, digest: String, dateHeader: String, signature: String, content: any Content, request: Vapor.Request) async throws {
+  open func notify(remote: URL, digest: String, dateHeader: String, signature: String, content: any APContent, request: APNetworkingRequest) async throws {
     guard let host = remote.host() else {
       return
     }
@@ -94,33 +116,60 @@ keyId="\(actorKeyId)",headers="\(headers.joined(separator: " "))",signature="\(e
     request.logger.info("Notifying: url: \(remote); digest: \(digest); date: \(dateHeader); signature: \(signature);")
     
     do {
-      let response = try await request.client.post(
-        URI(string: remote.absoluteString),
-        headers: HTTPHeaders([
-          ("Host", host),
-          ("Date", dateHeader),
-          ("Digest", "SHA-256=\(digest)"),
-          ("Content-Type", ACTIVITY_JSON_HEADER),
-          ("Signature", signature)
-        ])) { req in
-          try req.content.encode(content, as: .activityJSON)
-          req.headers.replaceOrAdd(name: .contentType, value: ACTIVITY_JSON_HEADER)
-        }
+      let headers = HTTPHeaders([
+        ("Host", host),
+        ("Date", dateHeader),
+        ("Digest", "SHA-256=\(digest)"),
+        ("Content-Type", ACTIVITY_JSON_HEADER),
+        ("Signature", signature)
+      ])
+      #if canImport(Vapor)
+      let response = try await request.post(
+        remote.absoluteString,
+        headers: headers,
+        body: content,
+        contentType: .activityJSON
+      )
+      #else
+      let response = try await request.post(
+        remote.absoluteString,
+        headers: headers,
+        body: content,
+        contentType: "application/activity+json"
+      )
+      #endif
       
       // @TODO: Inspect Response to ensure everything is okay
-      switch response.status {
+      switch response.0.status {
       case .accepted...(.imUsed):
-        request.logger.info("Notified \(remote); status: \(response.status);")
+        request.logger.info("Notified \(remote); status: \(response.0.status);")
       default:
-        if let data = response.body,
-           response.content.contentType == .json || response.content.contentType == .activityJSON,
-           let jsonObject = try? JSONSerialization.jsonObject(with: data) {
+        guard let resData = response.1 else {
+          throw APAbortError(.notAcceptable, reason: "Invalid or no response data from remote ActivityPub server")
+        }
+        
+        #if canImport(Vapor)
+        if response.0.contentType == .json || response.0.contentType == .activityJSON,
+           let jsonObject = try? JSONSerialization.jsonObject(with: resData) {
           request.logger.warning("Failed to notify \(remote); digest \(digest); date: \(dateHeader); signature: \(signature); response: \(jsonObject)")
         }
         else {
-          let data = response.body != nil ? Data(buffer: response.body!) : Data()
-          request.logger.warning("Failed to notify \(remote); digest \(digest); date: \(dateHeader); signature: \(signature); response: \(String(describing: String(data: data, encoding: .utf8)))")
+          if let data = response.1 {
+            let string = String(buffer: data)
+            request.logger.warning("Failed to notify \(remote); digest \(digest); date: \(dateHeader); signature: \(signature); response: \(String(describing: string))")
+          }
         }
+        #else
+        let mimeType = response.0.contentType
+        
+        if mimeType == .json || mimeType.subType.contains("activity+json"),
+           let jsonObject = try? JSONSerialization.jsonObject(with: resData) {
+          request.logger.warning("Failed to notify \(remote); digest \(digest); date: \(dateHeader); signature: \(signature); response: \(jsonObject)")
+        }
+        else {
+          request.logger.warning("Failed to notify \(remote); digest \(digest); date: \(dateHeader); signature: \(signature); response: \(String(describing: String(buffer: resData)))")
+        }
+        #endif
       }
     }
     catch {
@@ -131,8 +180,8 @@ keyId="\(actorKeyId)",headers="\(headers.joined(separator: " "))",signature="\(e
   }
 }
 
-// MARK: - HTTPStatus
-extension HTTPStatus: @retroactive Comparable {
+// MARK: - HTTPResponseStatus
+extension HTTPResponseStatus: @retroactive Comparable {
   public static func < (lhs: HTTPResponseStatus, rhs: HTTPResponseStatus) -> Bool {
     lhs.code < rhs.code
   }

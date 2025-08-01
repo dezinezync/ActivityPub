@@ -6,10 +6,9 @@
 //
 
 import Foundation
-import Vapor
 
 // MARK: - APPostComments
-public struct APPostComments: APOrderedCollection, Content, Sendable {
+public struct APPostComments: APOrderedCollection, APContent, Sendable {
   public typealias Item = APPostComment
   
   public var context: URL = APContextURL
@@ -44,7 +43,7 @@ public struct APPostComments: APOrderedCollection, Content, Sendable {
 }
 
 // MARK: - APPostComment
-public struct APPostComment: APItem, Content, Sendable {
+public struct APPostComment: APItem, APContent, Sendable {
   public let id: URL
   
   public var type: String = "Note"

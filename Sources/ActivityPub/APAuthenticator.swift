@@ -5,15 +5,17 @@
 //  Created by Nikhil Nigade on 30/08/24.
 //
 
-import Vapor
+import Foundation
 import Crypto
 import _CryptoExtras
 
 public let JSON_LD_HEADER = "application/ld+json; profile=\"https://www.w3.org/ns/activitystreams\""
 public let ACTIVITY_JSON_HEADER = "application/activity+json; charset=utf-8"
 
-/// Authenticates `Signature` header for ActivityPub requests
-public struct APAuthenticator: AsyncRequestAuthenticator {
+/// Authenticates `Signature` header for ActivityPub requests.
+///
+/// When using Vapor, conformance to `AsyncRequestAuthenticator` must be added by the implementation.
+public struct APAuthenticator {
   public static let rfc2616Formatter: DateFormatter = {
     let formatter = DateFormatter()
     formatter.locale = Locale(identifier: "en_US_POSIX")     // POSIX locale to ensure consistency
@@ -28,22 +30,22 @@ public struct APAuthenticator: AsyncRequestAuthenticator {
     
   }
   
-  public func authenticate(request: Vapor.Request) async throws {
+  public func authenticating(request: APNetworkingRequest) async throws {
     guard let signatureHeader = request.headers.first(name: "Signature") else {
-      throw Abort(.unauthorized, reason: "Signature header missing, required for authenticated requests.")
+      throw APAbortError(.unauthorized, reason: "Signature header missing, required for authenticated requests.")
     }
     
     // Ensure request was made within the last twelve hours
     guard let dateStr = request.headers.first(name: "Date") ?? request.headers.first(name: "date") else {
-      throw Abort(.badRequest, reason: "Date header not included in the request")
+      throw APAbortError(.badRequest, reason: "Date header not included in the request")
     }
     
     guard let date = Self.rfc2616Formatter.date(from: dateStr) else {
-      throw Abort(.badRequest, reason: "Date value in the header must be RFC2616 formatted")
+      throw APAbortError(.badRequest, reason: "Date value in the header must be RFC2616 formatted")
     }
     // 12 hours max
     guard Date().timeIntervalSince(date) <= (86400 * 0.5) else {
-      throw Abort(.badRequest, reason: "Stale request")
+      throw APAbortError(.badRequest, reason: "Stale request")
     }
     
     var signature: String?
@@ -52,7 +54,7 @@ public struct APAuthenticator: AsyncRequestAuthenticator {
     
     guard let match = try signatureRegExp.wholeMatch(in: signatureHeader),
           match.count >= 4 else {
-      throw Abort(.unauthorized, reason: "Invalid signature format.")
+      throw APAbortError(.unauthorized, reason: "Invalid signature format.")
     }
     // 0-th match is the whole string
     keyId = String(match[1].substring ?? "")
@@ -62,7 +64,7 @@ public struct APAuthenticator: AsyncRequestAuthenticator {
     guard let keyId,
           let signature,
           let headers else {
-      throw Abort(.unauthorized, reason: "Incomplete Signature header components.")
+      throw APAbortError(.unauthorized, reason: "Incomplete Signature header components.")
     }
     
     // fetch profile from KeyID trimming all items after `#` if observed in the URI
@@ -71,7 +73,11 @@ public struct APAuthenticator: AsyncRequestAuthenticator {
       actorURLPath = String(actorURLPath[actorURLPath.startIndex..<hashIndex])
     }
     
-    let publicKey = try await fetchPublicKey(for: URI(string: actorURLPath), using: request)
+    guard let actorURL = URL(string: actorURLPath) else {
+      throw APAbortError(.internalServerError, reason: "Failed to form actor profile URL")
+    }
+    
+    let publicKey = try await fetchPublicKey(for: actorURL, using: request)
     
     let headersList = headers
       .split(separator: " ")
@@ -87,7 +93,7 @@ public struct APAuthenticator: AsyncRequestAuthenticator {
            try verifySignature(publicKeyPem: publicKey,
                                signatureData: signatureData,
                                signedData: signedData) else {
-      throw Abort(.unauthorized, reason: "Signature mismatch, please verify the signature provided in the headers.")
+      throw APAbortError(.unauthorized, reason: "Signature mismatch, please verify the signature provided in the headers.")
     }
     
     request.logger.info("Validated signature for \(actorURLPath)")
@@ -100,12 +106,12 @@ public struct APAuthenticator: AsyncRequestAuthenticator {
   ///   - actor: the actor's URL
   ///   - req: the `Request` instance to use for making this request.
   /// - Returns: the `publicKey` in `PEM` format of the actor.
-  func fetchPublicKey(for actor: URI, using req: Request) async throws -> String {
+  func fetchPublicKey(for actor: URL, using req: APNetworkingRequest) async throws -> String {
     let profile = try await fetchActorProfile(from: actor, using: req)
     let publicKey = profile.publicKey.publicKeyPem
     
     guard !publicKey.isEmpty else {
-      throw Abort(.lengthRequired, reason: "Public key was empty for \(actor)")
+      throw APAbortError(.lengthRequired, reason: "Public key was empty for \(actor)")
     }
     
     return publicKey
@@ -116,10 +122,10 @@ public struct APAuthenticator: AsyncRequestAuthenticator {
   ///   - request: the request (header values are fetched from this instance)
   ///   - headersList: the list of headers included in the `Signature` header
   /// - Returns: the `.utf8` Data representation of the assumed signed string
-  fileprivate func prepareSignedData(from request: Request, headersList: [String]) -> Data {
+  fileprivate func prepareSignedData(from request: APNetworkingRequest, headersList: [String]) -> Data {
     let signingStrings: [String] = headersList.compactMap { header in
       if header == "(request-target)" {
-        return "\(header): \(request.method.rawValue.lowercased()) \(request.url.path)"
+        return "\(header): \(request.method.rawValue.lowercased()) \(request.resourceURL?.path ?? "")"
       }
       
       if let headerValue = request.headers.first(name: header) {
