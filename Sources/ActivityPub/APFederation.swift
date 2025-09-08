@@ -13,6 +13,11 @@ import NIOHTTP1
 import Network
 #endif
 
+/// **APFederationHost** manages notifying remote ActivityPub servers of new updates from your system.
+///
+/// This is a sparse implementation of the S2S (server-to-server) spec of ActivityPub.
+///
+/// In your implementation, you'll only ever need to invoke the `federate(object:to:actoryKeyId:actorPrivateKey:_)` method, however, the `notify(remote:digest:dateHeader:signature:content:request:)` method is also an open implementation should you need to tweak or override it. For most cases, this can be used as-is with no changes.
 open class APFederationHost {
   public static let encoder: JSONEncoder = {
     var encoder = JSONEncoder()
@@ -23,6 +28,15 @@ open class APFederationHost {
     return encoder
   }()
   
+  /// Federates the provided object to remote ActivityPub compliant servers.
+  ///
+  /// Each remote will only be notified once. Errors are consumed and no retries are implemented.
+  /// - Parameters:
+  ///   - object: the object to notify, the `ActivityObject` is encapsulated by the `APActivityResponse` for semantic purposes by the spec.
+  ///   - remotes: list of remotes to notify, duplicates will be notified
+  ///   - actorKeyId: the actor's key ID
+  ///   - actorPrivateKey: the actor's private key
+  ///   - req: networking request object which can provide a client for making the outgoing requests
   open func federate(object: any APActivityResponse, to remotes: [URL], actorKeyId: String, actorPrivateKey: String, _ req: APNetworkingRequest) async throws {
     let encodedObject = try Self.encoder.encode(object)
     
@@ -104,6 +118,19 @@ keyId="\(actorKeyId)",headers="\(headers.joined(separator: " "))",signature="\(e
     }
   }
   
+  /// Notify the provided remote with the resulting content.
+  ///
+  /// - Warning:
+  /// You may rarely need to call this method directly.
+  /// Please see ``APFederationHost.federate(object:to:actoryKeyId:actorPrivateKey:_)`` instead, which invokes with this method with the correct parameter values.
+  ///
+  /// - Parameters:
+  ///   - remote: the remote to notify, generally a `/inbox` url
+  ///   - digest: an encoded digest of the content being notified to the remote (sha256-base64)
+  ///   - dateHeader: the value to be used for the `Date` HTTP header
+  ///   - signature: the value to be used for the `Authentication` HTTP header
+  ///   - content: the content to notify
+  ///   - request: networking request object which can provide a client for making the outgoing requests
   open func notify(remote: URL, digest: String, dateHeader: String, signature: String, content: any APContent, request: APNetworkingRequest) async throws {
     guard let host = remote.host() else {
       return

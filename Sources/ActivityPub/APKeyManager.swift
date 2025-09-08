@@ -7,6 +7,7 @@
 
 import _CryptoExtras
 
+/// Generic key manager utility for generating public and private keys for your local actors
 public class ActivityPubKeyManager {
   /// Generates an ECDSA key pair and returns the public and private keys.
   public static func generateECDSAKeyPair() throws -> (privateKey: String, publicKey: String) {
