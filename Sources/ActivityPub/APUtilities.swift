@@ -22,9 +22,14 @@ import Network
 ///   - actorURL: the URL to the actor
 ///   - client: an instance conforming to `APNetworkingRequest` to use for making external requests.
 ///   - decoder: the decoder to use for the response, uses `JSONDecoder` by default.
+///   - cacheProvider: optional cache provider
 /// - Returns: instance of an `APPublicActor` which has `instance.publicKey`
-public func fetchActorProfile(from actorURL: URL, using req: APNetworkingRequest, decoder: JSONDecoder? = nil) async throws -> (any APPublicActor) {
-  // @TODO: Should provide protocol parameter to enable a caching mechanism for looking up previously resolved webfinger URIs
+public func fetchActorProfile(from actorURL: URL, using req: APNetworkingRequest, decoder: JSONDecoder? = nil, cacheProvider: APCacheProvider?) async throws -> (any APPublicActor) {
+  // We allow this to throw and not catch it as this can fail, but the rest of our routine can continue
+  if let cached = try? await cacheProvider?.getCachedActorProfile(for: actorURL.absoluteString) {
+    return cached
+  }
+  
   guard let hostScheme = actorURL.scheme,
         let hostHost = actorURL.host else {
     throw APAbortError(.badRequest, reason: "Invalid actor URL")
@@ -129,6 +134,9 @@ public func fetchActorProfile(from actorURL: URL, using req: APNetworkingRequest
   catch {
     throw error
   }
+  
+  // We allow this to throw and not catch it as this can fail, but our overall routine has completed successfully
+  try? await cacheProvider?.cacheActorProfile(profile: actor, uri: actorURL.absoluteString)
   
   return actor
 }

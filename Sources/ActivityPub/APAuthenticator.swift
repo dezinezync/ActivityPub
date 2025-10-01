@@ -30,7 +30,7 @@ public struct APAuthenticator {
     
   }
   
-  public func authenticating(request: APNetworkingRequest) async throws {
+  public func authenticating(request: APNetworkingRequest, cacheProvider: APCacheProvider?) async throws {
     guard let signatureHeader = request.headers.first(name: "Signature") else {
       throw APAbortError(.unauthorized, reason: "Signature header missing, required for authenticated requests.")
     }
@@ -77,7 +77,7 @@ public struct APAuthenticator {
       throw APAbortError(.internalServerError, reason: "Failed to form actor profile URL")
     }
     
-    let publicKey = try await fetchPublicKey(for: actorURL, using: request)
+    let publicKey = try await fetchPublicKey(for: actorURL, using: request, cacheProvider: cacheProvider)
     
     let headersList = headers
       .split(separator: " ")
@@ -105,9 +105,10 @@ public struct APAuthenticator {
   /// - Parameters:
   ///   - actor: the actor's URL
   ///   - req: the `Request` instance to use for making this request.
+  ///   - cacheProvider: cache provider for the request
   /// - Returns: the `publicKey` in `PEM` format of the actor.
-  func fetchPublicKey(for actor: URL, using req: APNetworkingRequest) async throws -> String {
-    let profile = try await fetchActorProfile(from: actor, using: req)
+  func fetchPublicKey(for actor: URL, using req: APNetworkingRequest, cacheProvider: APCacheProvider?) async throws -> String {
+    let profile = try await fetchActorProfile(from: actor, using: req, cacheProvider: cacheProvider)
     let publicKey = profile.publicKey.publicKeyPem
     
     guard !publicKey.isEmpty else {
