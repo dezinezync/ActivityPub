@@ -162,10 +162,10 @@ public struct APPost: APItem, APContent, Sendable {
     public let type: String
     public let url: URL
     public let mediaType: String
-    public let name: String
+    public let name: String?
     public let blurhash: String
     
-    public init(type: String, url: URL, mediaType: String, name: String, blurhash: String) {
+    public init(type: String, url: URL, mediaType: String, name: String?, blurhash: String) {
       self.type = type
       self.url = url
       self.mediaType = mediaType
