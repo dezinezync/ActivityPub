@@ -67,7 +67,7 @@ public struct APAuthenticator {
       throw APAbortError(.unauthorized, reason: "Incomplete Signature header components.")
     }
     
-    // fetch profile from KeyID trimming all items after `#` if observed in the URI
+    // Fetch profile from KeyID trimming all items after `#` if observed in the URI
     var actorURLPath = keyId
     if let hashIndex = actorURLPath.firstIndex(of: "#") {
       actorURLPath = String(actorURLPath[actorURLPath.startIndex..<hashIndex])

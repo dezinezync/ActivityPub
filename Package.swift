@@ -32,7 +32,10 @@ let package = Package(
     ),
     .testTarget(
       name: "ActivityPubTests",
-      dependencies: ["ActivityPub"]
+      dependencies: [
+        "ActivityPub",
+        .product(name: "Vapor", package: "vapor"),
+      ]
     ),
   ]
 )

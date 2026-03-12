@@ -19,7 +19,7 @@ public struct APMastodonProfile: APPublicActor, APContent, Sendable {
   public var icon: Media?
   public var tag: [Tag]?
   public var name: String
-  public var featuredTags: String
+  public var featuredTags: String?
   public var type: String
   public var followers: String
   public var devices: String?
@@ -29,7 +29,7 @@ public struct APMastodonProfile: APPublicActor, APContent, Sendable {
   public var following: String
   public var memorial: Bool?
   public var published: String
-  public var featured: String
+  public var featured: String?
   public var attachment: [Attachment]
   public var inbox: String
   
