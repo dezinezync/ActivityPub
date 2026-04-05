@@ -37,6 +37,7 @@ public struct APActivity: APContent, Sendable {
     case note = "Note"
     case create = "Create"
     case like = "Like"
+    case emojiReact = "EmojiReact"
     case follow = "Follow"
     case block = "Block"
     case undo = "Undo"
