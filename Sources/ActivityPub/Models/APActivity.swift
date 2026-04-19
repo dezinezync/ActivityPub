@@ -60,9 +60,11 @@ public struct APActivity: APContent, Sendable {
   public var published: Date?
   public var to: [URL]?
   public var cc: [URL]?
+  /// Top-level content field, used for EmojiReact activities (FEP-c0e0).
+  public var content: String?
   public var object: Either<Object, Either<Tombstone, URL>>
   public var signature: Signature?
-  
+
   public enum CodingKeys: String, CodingKey {
     case context = "@context"
     case id
@@ -71,6 +73,7 @@ public struct APActivity: APContent, Sendable {
     case published
     case to
     case cc
+    case content
     case object
     case signature
   }
@@ -177,7 +180,7 @@ public struct APActivity: APContent, Sendable {
   public init(context: Either<String, [APActivityContexts.ContextItem]> = .right([
     .string("https://www.w3.org/ns/activitystreams"),
     .string("https://w3id.org/security/v1")
-  ]), id: String, type: APActivity.ActivityType, actor: URL, published: Date? = nil, to: [URL]? = nil, cc: [URL]? = nil, object: Either<APActivity.Object, Either<Tombstone, URL>>, signature: APActivity.Signature? = nil) {
+  ]), id: String, type: APActivity.ActivityType, actor: URL, published: Date? = nil, to: [URL]? = nil, cc: [URL]? = nil, content: String? = nil, object: Either<APActivity.Object, Either<Tombstone, URL>>, signature: APActivity.Signature? = nil) {
     self.context = context
     self.id = id
     self.type = type
@@ -185,6 +188,7 @@ public struct APActivity: APContent, Sendable {
     self.published = published
     self.to = to
     self.cc = cc
+    self.content = content
     self.object = object
     self.signature = signature
   }
@@ -225,12 +229,56 @@ public struct APActivityContexts: Codable, Sendable {
   }
 
   public struct ComplexContext: Codable, Sendable {
-    public var ostatus: String = "http://ostatus.org#"
-    public var atomUri: String? = "ostatus:atomUri"
-    public var inReplyToAtomUri: String? = "ostatus:inReplyToAtomUri"
-    public var conversation: String? = "ostatus:conversation"
-    public var sensitive: String? = "as:sensitive"
+    public var ostatus: String?
+    public var atomUri: String?
+    public var inReplyToAtomUri: String?
+    public var conversation: String?
+    public var sensitive: String?
     public var toot: String?
     public var votersCount: String?
+    /// LitePub namespace URI, required for EmojiReact (FEP-c0e0).
+    public var litepub: String?
+    /// EmojiReact type alias under the LitePub namespace.
+    public var emojiReact: String?
+
+    public enum CodingKeys: String, CodingKey {
+      case ostatus, atomUri, inReplyToAtomUri, conversation, sensitive, toot, votersCount
+      case litepub = "litepub"
+      case emojiReact = "EmojiReact"
+    }
+
+    /// Standard OStatus/ActivityStreams context (default).
+    public init(
+      ostatus: String? = "http://ostatus.org#",
+      atomUri: String? = "ostatus:atomUri",
+      inReplyToAtomUri: String? = "ostatus:inReplyToAtomUri",
+      conversation: String? = "ostatus:conversation",
+      sensitive: String? = "as:sensitive",
+      toot: String? = nil,
+      votersCount: String? = nil,
+      litepub: String? = nil,
+      emojiReact: String? = nil
+    ) {
+      self.ostatus = ostatus
+      self.atomUri = atomUri
+      self.inReplyToAtomUri = inReplyToAtomUri
+      self.conversation = conversation
+      self.sensitive = sensitive
+      self.toot = toot
+      self.votersCount = votersCount
+      self.litepub = litepub
+      self.emojiReact = emojiReact
+    }
+
+    /// LitePub context for EmojiReact activities (FEP-c0e0).
+    public static let litePub = ComplexContext(
+      ostatus: nil,
+      atomUri: nil,
+      inReplyToAtomUri: nil,
+      conversation: nil,
+      sensitive: nil,
+      litepub: "http://litepub.social/ns#",
+      emojiReact: "litepub:EmojiReact"
+    )
   }
 }
